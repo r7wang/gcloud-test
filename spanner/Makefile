@@ -13,6 +13,10 @@ clean:
 deps:
 	@go get ./...
 
+.PHONY: test
+test:
+	@./go-test.sh
+
 .PHONY: build
 build:
 	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) CGO_ENABLED=0 go build $(GO_FLAGS) -o $(BIN_NAME)/build/$(GO_OS)-$(GO_ARCH)/$(BIN_NAME) \
