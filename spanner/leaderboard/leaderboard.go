@@ -78,6 +78,26 @@ func createDatabase(ctx context.Context, w io.Writer, adminClient *database.Data
 	return nil
 }
 
+func alterTables(ctx context.Context, w io.Writer, adminClient *database.DatabaseAdminClient, db string) error {
+	op, err := adminClient.UpdateDatabaseDdl(ctx, &adminpb.UpdateDatabaseDdlRequest{
+		Database: db,
+		Statements: []string{
+			`ALTER TABLE Players
+			    ADD COLUMN Height INT64`,
+			`ALTER TABLE Scores
+			    ADD COLUMN Variance INT64`,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if err := op.Wait(ctx); err != nil {
+		return err
+	}
+	fmt.Fprintf(w, "Altered tables\n")
+	return nil
+}
+
 func insertPlayers(ctx context.Context, w io.Writer, client *spanner.Client) error {
 	// Get number of players to use as an incrementing value for each PlayerName to be inserted
 	stmt := spanner.Statement{
@@ -289,6 +309,15 @@ func run(ctx context.Context, adminClient *database.DatabaseAdminClient, dataCli
 	// createdatabase command
 	if cmd == "createdatabase" {
 		err := createDatabase(ctx, w, adminClient, db)
+		if err != nil {
+			fmt.Fprintf(w, "%s failed with %v", cmd, err)
+		}
+		return err
+	}
+
+	// altertables command
+	if cmd == "altertables" {
+		err := alterTables(ctx, w, adminClient, db)
 		if err != nil {
 			fmt.Fprintf(w, "%s failed with %v", cmd, err)
 		}
