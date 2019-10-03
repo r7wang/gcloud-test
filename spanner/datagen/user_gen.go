@@ -30,8 +30,6 @@ func (gen *UserGenerator) Generate() error {
 
 	// We are going to probably want enough users to demonstrate scale.
 	const numUsers = 200000
-	// Batch updates should contain anywhere between 1 MB to 5 MB of data. This should be on the
-	// slightly more conservative side.
 	const bucketSize = 5000
 	const numBuckets = numUsers / bucketSize
 
@@ -42,7 +40,6 @@ func (gen *UserGenerator) Generate() error {
 			max = numUsers
 		}
 		err := gen.generateForBucket(min, max)
-
 		if err != nil {
 			return err
 		}
