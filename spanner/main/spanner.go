@@ -19,11 +19,6 @@ import (
 	"google.golang.org/api/iterator"
 )
 
-//	-	We use a randomly generated integer as a key because there is no combination of attributes
-//		that defines uniqueness. This also has the side effect of eliminating data locality but
-//		also simultaneously decreasing hot spots.
-//	-	To avoid the possibility of identifier collisions, the transaction is expected to retry
-//		until a unique key is found.
 func insertUsers(ctx context.Context, w io.Writer, client *spanner.Client) error {
 	// Get number of players to use as an incrementing value for each PlayerName to be inserted
 	stmt := spanner.Statement{
@@ -233,20 +228,31 @@ func createClients(ctx context.Context, db string) (*database.DatabaseAdminClien
 func run(
 	ctx context.Context,
 	adminClient *database.DatabaseAdminClient,
-	dataClient *spanner.Client, w io.Writer,
+	dataClient *spanner.Client,
+	w io.Writer,
 	db string,
 ) error {
 
-	schema := datagen.NewSchema(ctx, adminClient, db)
-	if err := schema.CreateDatabase(w); err != nil {
-		fmt.Fprintf(w, "createDatabase failed with %v", err)
+	schema := datagen.NewSchema(ctx, adminClient)
+	if err := schema.CreateDatabase(db); err != nil {
+		fmt.Fprintf(w, "Failed to instantiate schema: %v\n", err)
 		return err
 	}
+	fmt.Fprintf(w, "Created database [%s]\n", db)
 
-	if err := insertUsers(ctx, w, dataClient); err != nil {
-		fmt.Fprintf(w, "insertUsers failed with %v", err)
+	companyGen := datagen.NewCompanyGenerator(ctx, dataClient)
+	if err := companyGen.Generate(); err != nil {
+		fmt.Fprintf(w, "Failed to generate companies: %v\n", err)
 		return err
 	}
+	fmt.Fprintf(w, "Inserted companies\n")
+
+	userGen := datagen.NewUserGenerator(ctx, dataClient)
+	if err := userGen.Generate(); err != nil {
+		fmt.Fprintf(w, "Failed to generate users: %v\n", err)
+		return err
+	}
+	fmt.Fprintf(w, "Inserted users\n")
 
 	return nil
 }
@@ -258,7 +264,7 @@ func main() {
 
 	flag.Parse()
 	flagCount := len(flag.Args())
-	if flagCount != 2 {
+	if flagCount != 1 {
 		flag.Usage()
 		os.Exit(2)
 	}

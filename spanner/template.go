@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Command spanner_leaderboard contains runnable snippet code for Cloud Spanner.
-package main
+package template
 
 import (
 	"bytes"

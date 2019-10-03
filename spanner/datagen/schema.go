@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"regexp"
 
 	database "cloud.google.com/go/spanner/admin/database/apiv1"
@@ -15,15 +16,22 @@ import (
 type Schema struct {
 	ctx    context.Context
 	client *database.DatabaseAdminClient
-	db     string
+	w      io.Writer
 }
 
-// NewSchema returns a new Schema object.
-func NewSchema(ctx context.Context, client *database.DatabaseAdminClient, db string) *Schema {
-	return &Schema{ctx: ctx, client: client, db: db}
+// NewSchema returns a new Schema instance.
+func NewSchema(ctx context.Context, client *database.DatabaseAdminClient) *Schema {
+	return &Schema{ctx: ctx, client: client, w: os.Stdout}
 }
 
 // CreateDatabase initializes the ledger database.
+//
+// Primary keys are randomly generated because there are no combinations of attributes that are
+// sufficient for defining uniqueness. Attempting to define uniqueness through any set of
+// non-generated keys in the tables below would likely result in undesirable domain constraints.
+// These keys will:
+//	-	have no data locality
+//	-	be very resistant to forming hot spots
 //
 // When choosing between INT64 and UUIDv4 as a primary key, we note the following differences:
 //	-	INT64 consumes 8 bytes; UUIDv4 consumes at least 16 bytes (either BYTE[16] or STRING[36]).
@@ -31,10 +39,10 @@ func NewSchema(ctx context.Context, client *database.DatabaseAdminClient, db str
 //	-	In either case, we may want to consider writing a retry in case of collision for tables
 //		that we anticipate to have more records than a certain threshold. This is just a
 //		preventative measure to ensure correctness.
-func (s *Schema) CreateDatabase(w io.Writer) error {
-	matches := regexp.MustCompile("^(.*)/databases/(.*)$").FindStringSubmatch(s.db)
+func (s *Schema) CreateDatabase(db string) error {
+	matches := regexp.MustCompile("^(.*)/databases/(.*)$").FindStringSubmatch(db)
 	if matches == nil || len(matches) != 3 {
-		return fmt.Errorf("Invalid database id %s", s.db)
+		return fmt.Errorf("Invalid database id %s", db)
 	}
 	op, err := s.client.CreateDatabase(s.ctx, &adminpb.CreateDatabaseRequest{
 		Parent:          matches[1],
@@ -57,7 +65,7 @@ func (s *Schema) CreateDatabase(w io.Writer) error {
 				CompanyId INT64 NOT NULL,
 				FromUserId INT64 NOT NULL,
 				ToUserId INT64 NOT NULL,
-				Time TIMESTAMP NOT NULL,
+				Time TIMESTAMP NOT NULL
 				OPTIONS(allow_commit_timestamp=true)
 			) PRIMARY KEY(Id)`,
 		},
@@ -68,6 +76,5 @@ func (s *Schema) CreateDatabase(w io.Writer) error {
 	if _, err := op.Wait(s.ctx); err != nil {
 		return err
 	}
-	fmt.Fprintf(w, "Created database [%s]\n", s.db)
 	return nil
 }
