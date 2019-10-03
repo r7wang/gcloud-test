@@ -1,7 +1,28 @@
 package datagen
 
+import (
+	"context"
+
+	"cloud.google.com/go/spanner"
+)
+
 // TransactionGenerator populates the transactions table within the ledger database.
 type TransactionGenerator struct {
+	ctx    context.Context
+	client *spanner.Client
+}
+
+// NewTransactionGenerator returns a new TransactionGenerator instance.
+func NewTransactionGenerator(ctx context.Context, client *spanner.Client) *TransactionGenerator {
+	return &TransactionGenerator{ctx: ctx, client: client}
+}
+
+// Generate adds a random list of users to the table.
+//
+// See the links below for more information.
+//		https://cloud.google.com/spanner/docs/bulk-loading
+func (gen *TransactionGenerator) Generate() error {
+	return nil
 }
 
 /*

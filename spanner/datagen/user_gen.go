@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"time"
 
 	"cloud.google.com/go/spanner"
+	"github.com/r7wang/gcloud-test/spanner/timer"
 )
 
 // UserGenerator populates the users table within the ledger database.
@@ -24,18 +26,40 @@ func NewUserGenerator(ctx context.Context, client *spanner.Client) *UserGenerato
 // See the links below for more information.
 //		https://cloud.google.com/spanner/docs/bulk-loading
 func (gen *UserGenerator) Generate() error {
-	const tableName = "Users"
+	defer timer.Track(time.Now(), "UserGenerator.Generate")
+
 	// We are going to probably want enough users to demonstrate scale.
 	const numUsers = 200000
 	// Batch updates should contain anywhere between 1 MB to 5 MB of data. This should be on the
 	// slightly more conservative side.
-	const bucketSize = 50000
+	const bucketSize = 5000
+	const numBuckets = numUsers / bucketSize
+
+	for bucketIdx := 0; bucketIdx < numBuckets; bucketIdx++ {
+		min := bucketSize * bucketIdx
+		max := min + bucketSize
+		if max > numUsers {
+			max = numUsers
+		}
+		err := gen.generateForBucket(min, max)
+
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (gen *UserGenerator) generateForBucket(min int, max int) error {
+	defer timer.Track(time.Now(), fmt.Sprintf("UserGenerator.generateForBucket-%d", max))
+
+	const tableName = "Users"
 
 	mutations := []*spanner.Mutation{}
-	for i := 1; i <= numUsers/bucketSize; i++ {
+	for userIdx := min; userIdx < max; userIdx++ {
 		mutation := spanner.InsertMap(tableName, map[string]interface{}{
-			"id":           rand.Uint64(),
-			"name":         fmt.Sprintf("User-%d", i),
+			"id":           rand.Int63(),
+			"name":         fmt.Sprintf("User-%d", userIdx),
 			"creationTime": spanner.CommitTimestamp,
 		})
 		mutations = append(mutations, mutation)

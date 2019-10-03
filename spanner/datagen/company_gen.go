@@ -3,8 +3,10 @@ package datagen
 import (
 	"context"
 	"math/rand"
+	"time"
 
 	"cloud.google.com/go/spanner"
+	"github.com/r7wang/gcloud-test/spanner/timer"
 )
 
 // CompanyGenerator populates the companies table within the ledger database.
@@ -35,6 +37,8 @@ func NewCompanyGenerator(ctx context.Context, client *spanner.Client) *CompanyGe
 //		https://cloud.google.com/spanner/docs/dml-syntax
 //		https://cloud.google.com/spanner/docs/transactions
 func (gen *CompanyGenerator) Generate() error {
+	defer timer.Track(time.Now(), "CompanyGenerator.Generate")
+
 	const tableName = "Companies"
 	companyNames := []string{
 		"Amazon",
@@ -52,7 +56,7 @@ func (gen *CompanyGenerator) Generate() error {
 	mutations := []*spanner.Mutation{}
 	for _, companyName := range companyNames {
 		mutation := spanner.InsertMap(tableName, map[string]interface{}{
-			"id":           rand.Uint64(),
+			"id":           rand.Int63(),
 			"name":         companyName,
 			"creationTime": spanner.CommitTimestamp,
 		})

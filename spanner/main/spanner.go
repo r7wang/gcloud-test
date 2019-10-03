@@ -254,6 +254,13 @@ func run(
 	}
 	fmt.Fprintf(w, "Inserted users\n")
 
+	transactionGen := datagen.NewTransactionGenerator(ctx, dataClient)
+	if err := transactionGen.Generate(); err != nil {
+		fmt.Fprintf(w, "Failed to generate transactions: %v\n", err)
+		return err
+	}
+	fmt.Fprintf(w, "Inserted transactions\n")
+
 	return nil
 }
 
