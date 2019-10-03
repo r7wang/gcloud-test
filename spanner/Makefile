@@ -1,7 +1,7 @@
 GO_OS := $(shell go env GOOS)
 GO_ARCH := $(shell go env GOARCH)
-BIN_NAME := spanner-datagen
-TARGET := build/$(GO_OS)-$(GO_ARCH)/$(BIN_NAME)
+TARGET_DIR := build/$(GO_OS)-$(GO_ARCH)
+TARGET_PREFIX := spanner
 
 all: clean deps build
 
@@ -18,8 +18,14 @@ deps:
 test:
 	@./go-test.sh
 
-.PHONY: build
-build:
-	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) CGO_ENABLED=0 go build $(GO_FLAGS) -o $(TARGET) \
-		./main/spanner.go
+.PHONY: build build-datagen build-query
+build: build-datagen build-query
+
+build-datagen:
+	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) CGO_ENABLED=0 go build $(GO_FLAGS) -o $(TARGET_DIR)/$(TARGET_PREFIX)-datagen \
+		./main/datagen
+
+build-query:
+	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) CGO_ENABLED=0 go build $(GO_FLAGS) -o $(TARGET_DIR)/$(TARGET_PREFIX)-query \
+		./main/query
 

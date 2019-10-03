@@ -13,12 +13,13 @@ import (
 
 // TransactionGenerator populates the transactions table within the ledger database.
 type TransactionGenerator struct {
+	ctx    context.Context
 	client *spanner.Client
 }
 
 // NewTransactionGenerator returns a new TransactionGenerator instance.
-func NewTransactionGenerator(client *spanner.Client) *TransactionGenerator {
-	return &TransactionGenerator{client: client}
+func NewTransactionGenerator(ctx context.Context, client *spanner.Client) *TransactionGenerator {
+	return &TransactionGenerator{ctx: ctx, client: client}
 }
 
 // Generate adds a random list of users to the table.
@@ -72,12 +73,11 @@ func (gen *TransactionGenerator) Generate() error {
 func (gen *TransactionGenerator) queryIds(tableName string) ([]int64, error) {
 	defer timer.Track(time.Now(), fmt.Sprintf("TransactionGenerator.queryIds[%s]", tableName))
 
-	ctx := context.Background()
 	stmt := spanner.Statement{
 		SQL: fmt.Sprintf(`SELECT Id FROM %s`, tableName),
 	}
 	start := time.Now()
-	iter := gen.client.Single().Query(ctx, stmt)
+	iter := gen.client.Single().Query(gen.ctx, stmt)
 	timer.Track(start, fmt.Sprintf("TransactionGenerator.queryIds[%s].SQL", tableName))
 	defer iter.Stop()
 	companyIDs := []int64{}
@@ -119,7 +119,6 @@ func (gen *TransactionGenerator) generateForBucket(
 	// is normally a bad practice when you often query on the primary key, but because our primary
 	// key is not semantically meaningful here (simply unique), this should allow for better data
 	// locality without creating any hot spots.
-	ctx := context.Background()
 	mutations := []*spanner.Mutation{}
 	for i := min; i < max; i++ {
 		companyIdx := rand.Int31() % int32(len(companyIDs))
@@ -144,7 +143,7 @@ func (gen *TransactionGenerator) generateForBucket(
 		mutations = append(mutations, mutation)
 	}
 	start := time.Now()
-	_, err := gen.client.Apply(ctx, mutations)
+	_, err := gen.client.Apply(gen.ctx, mutations)
 	timer.Track(start, "TransactionGenerator.generateForBucket.SQL")
 	return err
 }
