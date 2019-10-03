@@ -48,13 +48,19 @@ func (gen *TransactionGenerator) Generate() error {
 		return err
 	}
 
-	// Randomly search for 1 company, a from user and a to user.
+	// It's fine for us to generate fewer transactions to avoid partial buckets. When we're
+	// collecting performance data, we want to make sure that every operation is identical.
 	const numTransactions = 20000000
 	const bucketSize = 3000
 	const numBuckets = numTransactions / bucketSize
 
 	for bucketIdx := 0; bucketIdx < numBuckets; bucketIdx++ {
-		err := gen.generateForBucket(bucketSize, companyIDs, userIDs)
+		min := bucketSize * bucketIdx
+		max := min + bucketSize
+		if max > numTransactions {
+			max = numTransactions
+		}
+		err := gen.generateForBucket(min, max, companyIDs, userIDs)
 		if err != nil {
 			return err
 		}
@@ -64,12 +70,15 @@ func (gen *TransactionGenerator) Generate() error {
 }
 
 func (gen *TransactionGenerator) queryIds(tableName string) ([]int64, error) {
-	defer timer.Track(time.Now(), fmt.Sprintf("TransactionGenerator.queryIds-%s", tableName))
+	defer timer.Track(time.Now(), fmt.Sprintf("TransactionGenerator.queryIds[%s]", tableName))
 
+	ctx := context.Background()
 	stmt := spanner.Statement{
 		SQL: fmt.Sprintf(`SELECT Id FROM %s`, tableName),
 	}
-	iter := gen.client.Single().Query(context.Background(), stmt)
+	start := time.Now()
+	iter := gen.client.Single().Query(ctx, stmt)
+	timer.Track(start, fmt.Sprintf("TransactionGenerator.queryIds[%s].SQL", tableName))
 	defer iter.Stop()
 	companyIDs := []int64{}
 	var companyID int64
@@ -90,7 +99,8 @@ func (gen *TransactionGenerator) queryIds(tableName string) ([]int64, error) {
 }
 
 func (gen *TransactionGenerator) generateForBucket(
-	bucketSize int,
+	min int,
+	max int,
 	companyIDs []int64,
 	userIDs []int64,
 ) error {
@@ -98,12 +108,20 @@ func (gen *TransactionGenerator) generateForBucket(
 	defer timer.Track(time.Now(), "TransactionGenerator.generateForBucket")
 
 	const tableName = "Transactions"
+	const baseTransactionID int64 = 1000000000000000000
 
-	// Randomly seeding the RNG gives us a better chance to avoid collisions, especially when
-	// having to retry failed inserts by rerunning the transaction generator.
-	r := rand.New(rand.NewSource(rand.Int63()))
+	// Define the allowable time range.
+	const minTime int64 = 1451606400 // 2016-01-01
+	const maxTime int64 = 1567296000 // 2019-09-01
+	const timeRange = maxTime - minTime
+
+	// We use a monotonically incrementing ID here to optimize the performance on bulk insert. This
+	// is normally a bad practice when you often query on the primary key, but because our primary
+	// key is not semantically meaningful here (simply unique), this should allow for better data
+	// locality without creating any hot spots.
+	ctx := context.Background()
 	mutations := []*spanner.Mutation{}
-	for i := 0; i < bucketSize; i++ {
+	for i := min; i < max; i++ {
 		companyIdx := rand.Int31() % int32(len(companyIDs))
 		companyID := companyIDs[companyIdx]
 
@@ -113,15 +131,20 @@ func (gen *TransactionGenerator) generateForBucket(
 		toUserIdx := rand.Int31() % int32(len(userIDs))
 		toUserID := userIDs[toUserIdx]
 
+		unixTime := rand.Int63()%timeRange + minTime
+
+		// Although unrealistic, it's probably sufficient to only use "second" granularity here.
 		mutation := spanner.InsertMap(tableName, map[string]interface{}{
-			"id":         r.Int63(),
+			"id":         baseTransactionID + int64(i),
 			"companyId":  companyID,
 			"fromUserId": fromUserID,
 			"toUserId":   toUserID,
-			"time":       spanner.CommitTimestamp,
+			"time":       time.Unix(unixTime, 0),
 		})
 		mutations = append(mutations, mutation)
 	}
-	_, err := gen.client.Apply(context.Background(), mutations)
+	start := time.Now()
+	_, err := gen.client.Apply(ctx, mutations)
+	timer.Track(start, "TransactionGenerator.generateForBucket.SQL")
 	return err
 }
