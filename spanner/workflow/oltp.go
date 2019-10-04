@@ -22,6 +22,8 @@ func NewOLTP(ctx context.Context, client *spanner.Client) *OLTP {
 }
 
 // Run sequentially executes all of the test workflows.
+//
+// Consider adding a multiple random read test that uses an SQL query.
 func (wf *OLTP) Run() error {
 	if err := wf.runner.runTest(wf.simpleRandomReadRow, "OLTP.simpleRandomReadRow"); err != nil {
 		return err
@@ -93,7 +95,7 @@ func (wf *OLTP) simpleRandomQuery(r *rand.Rand) error {
 	iter := wf.client.Single().Query(wf.ctx, stmt)
 	defer iter.Stop()
 	var fromUserID, toUserID int64
-	if err := wf.scanIterator(iter, fromUserID, toUserID); err != nil {
+	if err := wf.scanIterator(iter, &fromUserID, &toUserID); err != nil {
 		return err
 	}
 	return nil
@@ -103,7 +105,7 @@ func (wf *OLTP) simpleRandomQuery(r *rand.Rand) error {
 func (wf *OLTP) multiSequentialRead(r *rand.Rand) error {
 	const numTransactions = 20000000
 	const baseTransactionID int64 = 1000000000000000000
-	const numReads = 5
+	const numReads = 100
 
 	startReadID := baseTransactionID + (r.Int63() % numTransactions)
 	iter := wf.client.Single().Read(
@@ -116,7 +118,7 @@ func (wf *OLTP) multiSequentialRead(r *rand.Rand) error {
 		[]string{"fromUserId", "toUserId"})
 	defer iter.Stop()
 	var fromUserID, toUserID int64
-	if err := wf.scanIterator(iter, fromUserID, toUserID); err != nil {
+	if err := wf.scanIterator(iter, &fromUserID, &toUserID); err != nil {
 		return err
 	}
 	return nil
@@ -223,7 +225,7 @@ func (wf *OLTP) scanIterator(iter *spanner.RowIterator, collectors ...interface{
 			}
 			return err
 		}
-		if err := row.Columns(collectors); err != nil {
+		if err := row.Columns(collectors...); err != nil {
 			return err
 		}
 	}
