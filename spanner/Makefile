@@ -18,14 +18,14 @@ deps:
 test:
 	@./go-test.sh
 
-.PHONY: build build-datagen build-query
-build: build-datagen build-query
+.PHONY: build build-datagen build-test
+build: build-datagen build-test
 
 build-datagen:
 	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) CGO_ENABLED=0 go build $(GO_FLAGS) -o $(TARGET_DIR)/$(TARGET_PREFIX)-datagen \
 		./main/datagen
 
-build-query:
-	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) CGO_ENABLED=0 go build $(GO_FLAGS) -o $(TARGET_DIR)/$(TARGET_PREFIX)-query \
-		./main/query
+build-test:
+	GOOS=$(GO_OS) GOARCH=$(GO_ARCH) CGO_ENABLED=0 go build $(GO_FLAGS) -o $(TARGET_DIR)/$(TARGET_PREFIX)-test \
+		./main/test
 
