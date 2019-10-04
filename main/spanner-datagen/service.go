@@ -36,7 +36,7 @@ func run(
 	db string,
 ) error {
 
-	schema := datagen.NewSchema(ctx, adminClient)
+	schema := datagen.NewSchemaSpanner(ctx, adminClient)
 	if err := schema.CreateDatabase(db); err != nil {
 		fmt.Fprintf(w, "Failed to instantiate schema: %v\n", err)
 		return err
@@ -57,7 +57,7 @@ func run(
 	}
 	fmt.Fprintf(w, "Inserted users\n")
 
-	transactionGen := datagen.NewTransactionGenerator(ctx, dataClient)
+	transactionGen := datagen.NewTransactionGeneratorSpanner(ctx, dataClient)
 	if err := transactionGen.Generate(); err != nil {
 		fmt.Fprintf(w, "Failed to generate transactions: %v\n", err)
 		return err
@@ -85,6 +85,9 @@ func main() {
 	db := flag.Arg(0)
 	ctx := context.Background()
 	adminClient, dataClient := createClients(ctx, db)
+	defer adminClient.Close()
+	defer dataClient.Close()
+
 	if err := run(ctx, adminClient, dataClient, os.Stdout, db); err != nil {
 		os.Exit(1)
 	}

@@ -11,17 +11,17 @@ import (
 	adminpb "google.golang.org/genproto/googleapis/spanner/admin/database/v1"
 )
 
-// Schema provides operations for initializing the ledger database, given an active Cloud Spanner
-// instance.
-type Schema struct {
+// SchemaSpanner provides operations for initializing the ledger database, given an active Cloud
+// Spanner instance.
+type SchemaSpanner struct {
 	ctx    context.Context
 	client *database.DatabaseAdminClient
 	w      io.Writer
 }
 
-// NewSchema returns a new Schema instance.
-func NewSchema(ctx context.Context, client *database.DatabaseAdminClient) *Schema {
-	return &Schema{ctx: ctx, client: client, w: os.Stdout}
+// NewSchemaSpanner returns a new SchemaSpanner instance.
+func NewSchemaSpanner(ctx context.Context, client *database.DatabaseAdminClient) *SchemaSpanner {
+	return &SchemaSpanner{ctx: ctx, client: client, w: os.Stdout}
 }
 
 // CreateDatabase initializes the ledger database.
@@ -39,7 +39,7 @@ func NewSchema(ctx context.Context, client *database.DatabaseAdminClient) *Schem
 //	-	In either case, we may want to consider writing a retry in case of collision for tables
 //		that we anticipate to have more records than a certain threshold. This is just a
 //		preventative measure to ensure correctness.
-func (s *Schema) CreateDatabase(db string) error {
+func (s *SchemaSpanner) CreateDatabase(db string) error {
 	matches := regexp.MustCompile("^(.*)/databases/(.*)$").FindStringSubmatch(db)
 	if matches == nil || len(matches) != 3 {
 		return fmt.Errorf("Invalid database id %s", db)

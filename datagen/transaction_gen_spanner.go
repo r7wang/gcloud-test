@@ -11,18 +11,18 @@ import (
 	"google.golang.org/api/iterator"
 )
 
-// TransactionGenerator populates the transactions table within the ledger database.
-type TransactionGenerator struct {
+// TransactionGeneratorSpanner populates the transactions table within the ledger database.
+type TransactionGeneratorSpanner struct {
 	ctx    context.Context
 	client *spanner.Client
 }
 
-// NewTransactionGenerator returns a new TransactionGenerator instance.
-func NewTransactionGenerator(ctx context.Context, client *spanner.Client) *TransactionGenerator {
-	return &TransactionGenerator{ctx: ctx, client: client}
+// NewTransactionGeneratorSpanner returns a new TransactionGeneratorSpanner instance.
+func NewTransactionGeneratorSpanner(ctx context.Context, client *spanner.Client) *TransactionGeneratorSpanner {
+	return &TransactionGeneratorSpanner{ctx: ctx, client: client}
 }
 
-// Generate adds a random list of users to the table.
+// Generate adds a random list of transactions to the table.
 //
 // In a real-world application, constraint checks surrounding transactions would be very important,
 // but for the purposes of performance evaluation, the transactions don't need to be strictly
@@ -35,7 +35,7 @@ func NewTransactionGenerator(ctx context.Context, client *spanner.Client) *Trans
 //
 // See the links below for more information.
 //		https://cloud.google.com/spanner/docs/bulk-loading
-func (gen *TransactionGenerator) Generate() error {
+func (gen *TransactionGeneratorSpanner) Generate() error {
 	defer timer.Track(time.Now(), "TransactionGenerator.Generate")
 
 	// For referential integrity, we still need to ensure that transactions select from a list of
@@ -70,7 +70,7 @@ func (gen *TransactionGenerator) Generate() error {
 	return nil
 }
 
-func (gen *TransactionGenerator) queryIds(tableName string) ([]int64, error) {
+func (gen *TransactionGeneratorSpanner) queryIds(tableName string) ([]int64, error) {
 	defer timer.Track(time.Now(), fmt.Sprintf("TransactionGenerator.queryIds[%s]", tableName))
 
 	stmt := spanner.Statement{
@@ -98,7 +98,7 @@ func (gen *TransactionGenerator) queryIds(tableName string) ([]int64, error) {
 	return companyIDs, nil
 }
 
-func (gen *TransactionGenerator) generateForBucket(
+func (gen *TransactionGeneratorSpanner) generateForBucket(
 	min int,
 	max int,
 	companyIDs []int64,

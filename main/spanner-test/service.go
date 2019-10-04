@@ -12,6 +12,15 @@ import (
 	"github.com/r7wang/gcloud-test/workflow"
 )
 
+func createClients(ctx context.Context, db string) *spanner.Client {
+	client, err := spanner.NewClient(ctx, db)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return client
+}
+
 func run(
 	ctx context.Context,
 	client *spanner.Client,
@@ -48,10 +57,8 @@ func main() {
 
 	db := flag.Arg(0)
 	ctx := context.Background()
-	client, err := spanner.NewClient(ctx, db)
-	if err != nil {
-		log.Fatal(err)
-	}
+	client := createClients(ctx, db)
+	defer client.Close()
 
 	if err := run(ctx, client, os.Stdout, db); err != nil {
 		os.Exit(1)
