@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"github.com/r7wang/gcloud-test/spanner/timer"
+	"github.com/r7wang/gcloud-test/timer"
 )
 
 // UserGenerator populates the users table within the ledger database.

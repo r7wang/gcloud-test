@@ -9,7 +9,7 @@ import (
 	"os"
 
 	"cloud.google.com/go/spanner"
-	"github.com/r7wang/gcloud-test/spanner/workflow"
+	"github.com/r7wang/gcloud-test/workflow"
 )
 
 func run(

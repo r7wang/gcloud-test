@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"github.com/r7wang/gcloud-test/spanner/timer"
+	"github.com/r7wang/gcloud-test/timer"
 	"google.golang.org/api/iterator"
 )
 

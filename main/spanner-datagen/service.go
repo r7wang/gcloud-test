@@ -11,7 +11,7 @@ import (
 	"cloud.google.com/go/spanner"
 	database "cloud.google.com/go/spanner/admin/database/apiv1"
 
-	"github.com/r7wang/gcloud-test/spanner/datagen"
+	"github.com/r7wang/gcloud-test/datagen"
 )
 
 func createClients(ctx context.Context, db string) (*database.DatabaseAdminClient, *spanner.Client) {

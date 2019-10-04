@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"github.com/r7wang/gcloud-test/spanner/timer"
+	"github.com/r7wang/gcloud-test/timer"
 )
 
 // CompanyGenerator populates the companies table within the ledger database.

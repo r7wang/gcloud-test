@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/r7wang/gcloud-test/spanner/timer"
+	"github.com/r7wang/gcloud-test/timer"
 )
 
 // Runner provides common tools for running tests.
