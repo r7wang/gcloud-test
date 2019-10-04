@@ -67,6 +67,9 @@ func run(
 	return nil
 }
 
+// The goal of this project is to take a given instance, and enable it to serve a variety of query
+// tests. As part of this process, there are metrics that can be collected on performance of bulk
+// inserts.
 func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, `Usage: spanner-datagen <database_name>`)

@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"cloud.google.com/go/spanner"
+	"github.com/r7wang/gcloud-test/spanner/workflow"
 )
 
 /*
@@ -76,6 +77,17 @@ func run(
 	w io.Writer,
 	db string,
 ) error {
+
+	oltp := workflow.NewOLTP(ctx, client)
+	if err := oltp.Run(); err != nil {
+		fmt.Fprintf(w, "Failed to run transactional workflow: %v\n", err)
+		return err
+	}
+
+	olap := workflow.NewOLAP(ctx, client)
+	if err := olap.Run(); err != nil {
+		return err
+	}
 
 	return nil
 }
