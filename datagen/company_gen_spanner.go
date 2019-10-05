@@ -9,15 +9,15 @@ import (
 	"github.com/r7wang/gcloud-test/timer"
 )
 
-// CompanyGenerator populates the companies table within the ledger database.
-type CompanyGenerator struct {
+// CompanyGeneratorSpanner populates the companies table within the ledger database.
+type CompanyGeneratorSpanner struct {
 	ctx    context.Context
 	client *spanner.Client
 }
 
-// NewCompanyGenerator returns a new CompanyGenerator instance.
-func NewCompanyGenerator(ctx context.Context, client *spanner.Client) *CompanyGenerator {
-	return &CompanyGenerator{ctx: ctx, client: client}
+// NewCompanyGeneratorSpanner returns a new CompanyGeneratorSpanner instance.
+func NewCompanyGeneratorSpanner(ctx context.Context, client *spanner.Client) *CompanyGeneratorSpanner {
+	return &CompanyGeneratorSpanner{ctx: ctx, client: client}
 }
 
 // Generate adds a predefined list of companies to the table. We can do this in multiple ways.
@@ -36,26 +36,12 @@ func NewCompanyGenerator(ctx context.Context, client *spanner.Client) *CompanyGe
 //		https://cloud.google.com/spanner/docs/dml-tasks
 //		https://cloud.google.com/spanner/docs/dml-syntax
 //		https://cloud.google.com/spanner/docs/transactions
-func (gen *CompanyGenerator) Generate() error {
+func (gen *CompanyGeneratorSpanner) Generate() error {
 	defer timer.Track(time.Now(), "CompanyGenerator.Generate")
 
-	const tableName = "Companies"
-	companyNames := []string{
-		"Amazon",
-		"Apple",
-		"Facebook",
-		"Google",
-		"IBM",
-		"Intel",
-		"Microsoft",
-		"Netflix",
-		"Oracle",
-		"Visa",
-	}
-
 	mutations := []*spanner.Mutation{}
-	for _, companyName := range companyNames {
-		mutation := spanner.InsertMap(tableName, map[string]interface{}{
+	for _, companyName := range CompanyNames {
+		mutation := spanner.InsertMap(CompanyTableName, map[string]interface{}{
 			"id":           rand.Int63(),
 			"name":         companyName,
 			"creationTime": spanner.CommitTimestamp,

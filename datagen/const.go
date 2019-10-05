@@ -20,3 +20,17 @@ const (
 	// efficiency.
 	DefaultColumnFamily = "cf"
 )
+
+// CompanyNames predefines the list of companies to use.
+var CompanyNames = []string{
+	"Amazon",
+	"Apple",
+	"Facebook",
+	"Google",
+	"IBM",
+	"Intel",
+	"Microsoft",
+	"Netflix",
+	"Oracle",
+	"Visa",
+}

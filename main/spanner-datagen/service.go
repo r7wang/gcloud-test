@@ -43,7 +43,7 @@ func run(
 	}
 	fmt.Fprintf(w, "Created database [%s]\n", db)
 
-	companyGen := datagen.NewCompanyGenerator(ctx, dataClient)
+	companyGen := datagen.NewCompanyGeneratorSpanner(ctx, dataClient)
 	if err := companyGen.Generate(); err != nil {
 		fmt.Fprintf(w, "Failed to generate companies: %v\n", err)
 		return err

@@ -21,6 +21,11 @@ func NewTransactionGeneratorBigtable(ctx context.Context, client *bigtable.Clien
 }
 
 // Generate adds a random list of transactions to the table.
+//
+// TODO: This should probably be reworked so that company and users are no longer randomly
+//		 generated IDs in transactions.
+//
+// TODO: Consider the use of export/import instead of writing a generator.
 func (gen *TransactionGeneratorBigtable) Generate() error {
 	table := gen.client.Open(TransactionTableName)
 	mutation := gen.getMutation(
@@ -44,7 +49,7 @@ func (gen *TransactionGeneratorBigtable) getMutation(colNames ...string) *bigtab
 	unixTime := rand.Int63()%timeRange + minTime
 	ts := bigtable.Time(time.Unix(unixTime, 0))
 	for _, colName := range colNames {
-		mutation.Set(TransactionColumnFamily, colName, ts, gen.randomID())
+		mutation.Set(DefaultColumnFamily, colName, ts, gen.randomID())
 	}
 	return mutation
 }
