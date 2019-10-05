@@ -28,7 +28,7 @@ func run(
 	db string,
 ) error {
 
-	oltp := workflow.NewOLTP(ctx, client)
+	oltp := workflow.NewOLTPSpanner(ctx, client)
 	if err := oltp.Run(); err != nil {
 		fmt.Fprintf(w, "Failed to run transactional workflow: %v\n", err)
 		return err

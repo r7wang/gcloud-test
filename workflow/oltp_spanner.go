@@ -9,23 +9,23 @@ import (
 	"google.golang.org/api/iterator"
 )
 
-// OLTP defines operations to exercise common types of transactional workflows that define certain
+// OLTPSpanner defines operations to exercise common types of transactional workflows with certain
 // semantic guarantees.
-type OLTP struct {
+type OLTPSpanner struct {
 	ctx    context.Context
 	runner *runner
 	client *spanner.Client
 }
 
-// NewOLTP reeturns a new OLTP instance.
-func NewOLTP(ctx context.Context, client *spanner.Client) *OLTP {
-	return &OLTP{ctx: ctx, runner: &runner{}, client: client}
+// NewOLTPSpanner returns a new OLTPSpanner instance.
+func NewOLTPSpanner(ctx context.Context, client *spanner.Client) *OLTPSpanner {
+	return &OLTPSpanner{ctx: ctx, runner: &runner{}, client: client}
 }
 
 // Run sequentially executes all of the test workflows.
 //
-// Consider adding a multiple random read test that uses an SQL query.
-func (wf *OLTP) Run() error {
+// Consider adding a multiple random read test that uses a SQL query.
+func (wf *OLTPSpanner) Run() error {
 	if err := wf.runner.runTest(wf.simpleRandomReadRow, "OLTP.simpleRandomReadRow"); err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func (wf *OLTP) Run() error {
 }
 
 // Read a single row using ReadRow.
-func (wf *OLTP) simpleRandomReadRow(r *rand.Rand) error {
+func (wf *OLTPSpanner) simpleRandomReadRow(r *rand.Rand) error {
 	readID := datagen.TransactionBaseID + (r.Int63() % datagen.TransactionCount)
 	row, err := wf.client.Single().ReadRow(
 		wf.ctx,
@@ -77,7 +77,7 @@ func (wf *OLTP) simpleRandomReadRow(r *rand.Rand) error {
 }
 
 // Read a single row using the Query and DML.
-func (wf *OLTP) simpleRandomQuery(r *rand.Rand) error {
+func (wf *OLTPSpanner) simpleRandomQuery(r *rand.Rand) error {
 	readID := datagen.TransactionBaseID + (r.Int63() % datagen.TransactionCount)
 	stmt := spanner.Statement{
 		SQL: `SELECT t.FromUserId, t.ToUserId
@@ -97,7 +97,7 @@ func (wf *OLTP) simpleRandomQuery(r *rand.Rand) error {
 }
 
 // Read multiple (5) rows using a sequential Read.
-func (wf *OLTP) multiSequentialRead(r *rand.Rand) error {
+func (wf *OLTPSpanner) multiSequentialRead(r *rand.Rand) error {
 	const numReads = 100
 
 	startReadID := datagen.TransactionBaseID + (r.Int63() % datagen.TransactionCount)
@@ -118,7 +118,7 @@ func (wf *OLTP) multiSequentialRead(r *rand.Rand) error {
 }
 
 // Read multiple (5) rows using a random Read.
-func (wf *OLTP) multiRandomRead(r *rand.Rand) error {
+func (wf *OLTPSpanner) multiRandomRead(r *rand.Rand) error {
 	const numReads = 5
 
 	txn := wf.client.ReadOnlyTransaction()
@@ -142,7 +142,7 @@ func (wf *OLTP) multiRandomRead(r *rand.Rand) error {
 }
 
 // Read and update a single row.
-func (wf *OLTP) readAndUpdate(r *rand.Rand) error {
+func (wf *OLTPSpanner) readAndUpdate(r *rand.Rand) error {
 	// This should be both valid and random, hence we need to know the range of valid
 	// identifiers within the table.
 	updateID := datagen.TransactionBaseID + (r.Int63() % datagen.TransactionCount)
@@ -176,7 +176,7 @@ func (wf *OLTP) readAndUpdate(r *rand.Rand) error {
 }
 
 // Blindly write a single row.
-func (wf *OLTP) blindWrite(r *rand.Rand) (int64, error) {
+func (wf *OLTPSpanner) blindWrite(r *rand.Rand) (int64, error) {
 	// For these tests, referential integrity is un-important since there are no defined
 	// foreign key constraints.
 	addID := r.Int63()
@@ -195,7 +195,7 @@ func (wf *OLTP) blindWrite(r *rand.Rand) (int64, error) {
 }
 
 // Delete a predefined row.
-func (wf *OLTP) delete(r *rand.Rand, key int64) error {
+func (wf *OLTPSpanner) delete(r *rand.Rand, key int64) error {
 	mutation := spanner.Delete(datagen.TransactionTableName, spanner.Key{key})
 	_, err := wf.client.Apply(wf.ctx, []*spanner.Mutation{mutation})
 	if err != nil {
@@ -204,7 +204,7 @@ func (wf *OLTP) delete(r *rand.Rand, key int64) error {
 	return nil
 }
 
-func (wf *OLTP) scanIterator(iter *spanner.RowIterator, collectors ...interface{}) error {
+func (wf *OLTPSpanner) scanIterator(iter *spanner.RowIterator, collectors ...interface{}) error {
 	for {
 		row, err := iter.Next()
 		if err != nil {
