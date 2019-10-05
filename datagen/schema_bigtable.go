@@ -15,19 +15,23 @@ type SchemaBigtable struct {
 
 // NewSchemaBigtable returns a new SchemaBigtable instance.
 func NewSchemaBigtable(ctx context.Context, client *bigtable.AdminClient) *SchemaBigtable {
-	return &SchemaBigtable{}
+	return &SchemaBigtable{ctx: ctx, client: client}
 }
 
 // CreateTables initializes the ledger tables.
 func (s *SchemaBigtable) CreateTables() error {
-	const tableName = "Transactions"
-	const familyName = "cf"
-
-	if err := s.client.CreateTable(s.ctx, tableName); err != nil {
-		return err
+	tableNames := []string{
+		CompanyTableName,
+		UserTableName,
+		TransactionTableName,
 	}
-	if err := s.client.CreateColumnFamily(s.ctx, tableName, familyName); err != nil {
-		return err
+	for _, tableName := range tableNames {
+		if err := s.client.CreateTable(s.ctx, tableName); err != nil {
+			return err
+		}
+		if err := s.client.CreateColumnFamily(s.ctx, tableName, DefaultColumnFamily); err != nil {
+			return err
+		}
 	}
 	return nil
 }

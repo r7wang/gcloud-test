@@ -45,7 +45,7 @@ func run(
 	}
 	fmt.Fprintf(w, "Created schema\n")
 
-	transactionGen := datagen.NewTransactionGeneratorBigtable()
+	transactionGen := datagen.NewTransactionGeneratorBigtable(ctx, dataClient)
 	if err := transactionGen.Generate(); err != nil {
 		fmt.Fprintf(w, "Failed to generate transactions: %v\n", err)
 		return err
