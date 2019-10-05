@@ -51,15 +51,14 @@ func (gen *TransactionGeneratorSpanner) Generate() error {
 
 	// It's fine for us to generate fewer transactions to avoid partial buckets. When we're
 	// collecting performance data, we want to make sure that every operation is identical.
-	const numTransactions = 20000000
-	const bucketSize = 3000
-	const numBuckets = numTransactions / bucketSize
+	const bucketSize int64 = 3000
+	const numBuckets int64 = TransactionCount / bucketSize
 
-	for bucketIdx := 0; bucketIdx < numBuckets; bucketIdx++ {
+	for bucketIdx := int64(0); bucketIdx < numBuckets; bucketIdx++ {
 		min := bucketSize * bucketIdx
 		max := min + bucketSize
-		if max > numTransactions {
-			max = numTransactions
+		if max > TransactionCount {
+			max = TransactionCount
 		}
 		err := gen.generateForBucket(min, max, companyIDs, userIDs)
 		if err != nil {
@@ -99,8 +98,8 @@ func (gen *TransactionGeneratorSpanner) queryIds(tableName string) ([]int64, err
 }
 
 func (gen *TransactionGeneratorSpanner) generateForBucket(
-	min int,
-	max int,
+	min int64,
+	max int64,
 	companyIDs []int64,
 	userIDs []int64,
 ) error {
@@ -108,12 +107,9 @@ func (gen *TransactionGeneratorSpanner) generateForBucket(
 	defer timer.Track(time.Now(), "TransactionGenerator.generateForBucket")
 
 	const tableName = "Transactions"
-	const baseTransactionID int64 = 1000000000000000000
 
 	// Define the allowable time range.
-	const minTime int64 = 1451606400 // 2016-01-01
-	const maxTime int64 = 1567296000 // 2019-09-01
-	const timeRange = maxTime - minTime
+	const timeRange = TransactionMaxTime - TransactionMinTime
 
 	// We use a monotonically incrementing ID here to optimize the performance on bulk insert. This
 	// is normally a bad practice when you often query on the primary key, but because our primary
@@ -130,11 +126,11 @@ func (gen *TransactionGeneratorSpanner) generateForBucket(
 		toUserIdx := rand.Int31() % int32(len(userIDs))
 		toUserID := userIDs[toUserIdx]
 
-		unixTime := rand.Int63()%timeRange + minTime
+		unixTime := rand.Int63()%timeRange + TransactionMinTime
 
 		// Although unrealistic, it's probably sufficient to only use "second" granularity here.
 		mutation := spanner.InsertMap(tableName, map[string]interface{}{
-			"id":         baseTransactionID + int64(i),
+			"id":         TransactionBaseID + i,
 			"companyId":  companyID,
 			"fromUserId": fromUserID,
 			"toUserId":   toUserID,

@@ -2,11 +2,11 @@ package datagen
 
 import (
 	"context"
-	"encoding/binary"
 	"math/rand"
 	"time"
 
 	"cloud.google.com/go/bigtable"
+	"github.com/r7wang/gcloud-test/timer"
 )
 
 // TransactionGeneratorBigtable populates the transactions table within the ledger instance.
@@ -26,13 +26,20 @@ func NewTransactionGeneratorBigtable(ctx context.Context, client *bigtable.Clien
 //		 generated IDs in transactions.
 //
 // TODO: Consider the use of export/import instead of writing a generator.
+//
+// TODO: Consider passing a seeded rand as a service. This seems to get more randomized results.
 func (gen *TransactionGeneratorBigtable) Generate() error {
+	defer timer.Track(time.Now(), "TransactionGenerator.Generate")
+
+	// For referential integrity, we still need to ensure that transactions select from a list of
+	// valid company and user IDs.
+
 	table := gen.client.Open(TransactionTableName)
 	mutation := gen.getMutation(
 		TransactionCompanyColumn,
 		TransactionFromUserColumn,
 		TransactionToUserColumn)
-	if err := table.Apply(gen.ctx, string(TransactionBaseID), mutation); err != nil {
+	if err := table.Apply(gen.ctx, int64String(TransactionBaseID), mutation); err != nil {
 		return err
 	}
 	return nil
@@ -41,12 +48,11 @@ func (gen *TransactionGeneratorBigtable) Generate() error {
 // Returns a mutation that sets random IDs on a set of columns.
 func (gen *TransactionGeneratorBigtable) getMutation(colNames ...string) *bigtable.Mutation {
 	// Define the allowable time range.
-	const minTime int64 = 1451606400 // 2016-01-01
-	const maxTime int64 = 1567296000 // 2019-09-01
-	const timeRange = maxTime - minTime
+	const timeRange = TransactionMaxTime - TransactionMinTime
 
+	randSeeded := rand.New(rand.NewSource(rand.Int63()))
 	mutation := bigtable.NewMutation()
-	unixTime := rand.Int63()%timeRange + minTime
+	unixTime := randSeeded.Int63()%timeRange + TransactionMinTime
 	ts := bigtable.Time(time.Unix(unixTime, 0))
 	for _, colName := range colNames {
 		mutation.Set(DefaultColumnFamily, colName, ts, gen.randomID())
@@ -57,7 +63,5 @@ func (gen *TransactionGeneratorBigtable) getMutation(colNames ...string) *bigtab
 // BigEndian is used here to simulate how an int64 might normally be stored.
 func (gen *TransactionGeneratorBigtable) randomID() []byte {
 	val := rand.Int63()
-	bytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(bytes, uint64(val))
-	return bytes
+	return int64Bytes(val)
 }

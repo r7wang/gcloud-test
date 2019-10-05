@@ -22,10 +22,17 @@ func NewUserGeneratorBigtable(ctx context.Context, client *bigtable.Client) *Use
 }
 
 // Generate adds a random list of users to the table.
+//
+// According to the documentation, there is a hard limit of 100K mutations per bulk application,
+// however in testing, we've found that more than 100K mutations will still work. Even then, this
+// limit may not result in optimal performance.
+//
+// See the links below for more information:
+//		https://godoc.org/cloud.google.com/go/bigtable#Table.ApplyBulk
 func (gen *UserGeneratorBigtable) Generate() error {
 	defer timer.Track(time.Now(), "UserGenerator.Generate")
 
-	const bucketSize = UserCount
+	const bucketSize = 100000
 	const numBuckets = UserCount / bucketSize
 
 	for bucketIdx := 0; bucketIdx < numBuckets; bucketIdx++ {
@@ -55,7 +62,7 @@ func (gen *UserGeneratorBigtable) generateForBucket(min int, max int) error {
 			bigtable.Now(),
 			[]byte(fmt.Sprintf("User-%d", userIdx)))
 		mutations = append(mutations, mutation)
-		rowKeys = append(rowKeys, string(rand.Int63()))
+		rowKeys = append(rowKeys, int64String(rand.Int63()))
 	}
 	table := gen.client.Open(UserTableName)
 	if err := mergeErrors(table.ApplyBulk(gen.ctx, rowKeys, mutations)); err != nil {

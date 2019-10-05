@@ -20,9 +20,15 @@ const (
 	// TransactionToUserColumn is the column name for the receiver ID of a transaction.
 	TransactionToUserColumn = "ToUserId"
 	// TransactionBaseID is the lowest value for a monotonically increasing transaction ID.
-	TransactionBaseID = 1000000000000000000
+	TransactionBaseID int64 = 1000000000000000000
 	// TransactionCount is the number of transactions to be generated.
-	TransactionCount = 200000000
+	TransactionCount int64 = 20000000
+	// TransactionMinTime is the earliest Unix timestamp (seconds) for a transaction (inclusive).
+	// Corresponds to 2016-01-01.
+	TransactionMinTime int64 = 1451606400
+	// TransactionMaxTime is the latest Unix timestamp (seconds) for a transaction (exclusive).
+	// Corresponds to 2019-09-01.
+	TransactionMaxTime int64 = 1567296000
 
 	// DefaultColumnFamily is specific to bigtable. This name is intentionally kept short for
 	// efficiency.

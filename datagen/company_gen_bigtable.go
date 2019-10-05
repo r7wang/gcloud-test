@@ -34,11 +34,11 @@ func (gen *CompanyGeneratorBigtable) Generate() error {
 		mutation := bigtable.NewMutation()
 		mutation.Set(
 			DefaultColumnFamily,
-			"Name",
+			CompanyNameColumn,
 			bigtable.Now(),
 			[]byte(companyName))
 		mutations = append(mutations, mutation)
-		rowKeys = append(rowKeys, string(rand.Int63()))
+		rowKeys = append(rowKeys, int64String(rand.Int63()))
 	}
 	table := gen.client.Open(CompanyTableName)
 	if err := mergeErrors(table.ApplyBulk(gen.ctx, rowKeys, mutations)); err != nil {
