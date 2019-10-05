@@ -45,6 +45,20 @@ func run(
 	}
 	fmt.Fprintf(w, "Created schema\n")
 
+	companyGen := datagen.NewCompanyGeneratorBigtable(ctx, dataClient)
+	if err := companyGen.Generate(); err != nil {
+		fmt.Fprintf(w, "Failed to generate companies: %v\n", err)
+		return err
+	}
+	fmt.Fprintf(w, "Inserted companies\n")
+
+	userGen := datagen.NewUserGeneratorBigtable(ctx, dataClient)
+	if err := userGen.Generate(); err != nil {
+		fmt.Fprintf(w, "Failed to generate users: %v\n", err)
+		return err
+	}
+	fmt.Fprintf(w, "Inserted users\n")
+
 	transactionGen := datagen.NewTransactionGeneratorBigtable(ctx, dataClient)
 	if err := transactionGen.Generate(); err != nil {
 		fmt.Fprintf(w, "Failed to generate transactions: %v\n", err)

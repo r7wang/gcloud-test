@@ -50,7 +50,7 @@ func run(
 	}
 	fmt.Fprintf(w, "Inserted companies\n")
 
-	userGen := datagen.NewUserGenerator(ctx, dataClient)
+	userGen := datagen.NewUserGeneratorSpanner(ctx, dataClient)
 	if err := userGen.Generate(); err != nil {
 		fmt.Fprintf(w, "Failed to generate users: %v\n", err)
 		return err
