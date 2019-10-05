@@ -5,6 +5,7 @@ import (
 	"math/rand"
 
 	"cloud.google.com/go/spanner"
+	"github.com/r7wang/gcloud-test/datagen"
 	"google.golang.org/api/iterator"
 )
 
@@ -59,13 +60,10 @@ func (wf *OLTP) Run() error {
 
 // Read a single row using ReadRow.
 func (wf *OLTP) simpleRandomReadRow(r *rand.Rand) error {
-	const numTransactions = 20000000
-	const baseTransactionID int64 = 1000000000000000000
-
-	readID := baseTransactionID + (r.Int63() % numTransactions)
+	readID := datagen.TransactionBaseID + (r.Int63() % datagen.TransactionCount)
 	row, err := wf.client.Single().ReadRow(
 		wf.ctx,
-		TransactionTableName,
+		datagen.TransactionTableName,
 		spanner.Key{readID},
 		[]string{"fromUserId", "toUserId"})
 	if err != nil {
@@ -80,10 +78,7 @@ func (wf *OLTP) simpleRandomReadRow(r *rand.Rand) error {
 
 // Read a single row using the Query and DML.
 func (wf *OLTP) simpleRandomQuery(r *rand.Rand) error {
-	const numTransactions = 20000000
-	const baseTransactionID int64 = 1000000000000000000
-
-	readID := baseTransactionID + (r.Int63() % numTransactions)
+	readID := datagen.TransactionBaseID + (r.Int63() % datagen.TransactionCount)
 	stmt := spanner.Statement{
 		SQL: `SELECT t.FromUserId, t.ToUserId
 				FROM Transactions t
@@ -103,14 +98,12 @@ func (wf *OLTP) simpleRandomQuery(r *rand.Rand) error {
 
 // Read multiple (5) rows using a sequential Read.
 func (wf *OLTP) multiSequentialRead(r *rand.Rand) error {
-	const numTransactions = 20000000
-	const baseTransactionID int64 = 1000000000000000000
 	const numReads = 100
 
-	startReadID := baseTransactionID + (r.Int63() % numTransactions)
+	startReadID := datagen.TransactionBaseID + (r.Int63() % datagen.TransactionCount)
 	iter := wf.client.Single().Read(
 		wf.ctx,
-		TransactionTableName,
+		datagen.TransactionTableName,
 		spanner.KeyRange{
 			Start: spanner.Key{startReadID},
 			End:   spanner.Key{startReadID + numReads},
@@ -126,17 +119,15 @@ func (wf *OLTP) multiSequentialRead(r *rand.Rand) error {
 
 // Read multiple (5) rows using a random Read.
 func (wf *OLTP) multiRandomRead(r *rand.Rand) error {
-	const numTransactions = 20000000
-	const baseTransactionID int64 = 1000000000000000000
 	const numReads = 5
 
 	txn := wf.client.ReadOnlyTransaction()
 	defer txn.Close()
 	for i := 0; i < numReads; i++ {
-		readID := baseTransactionID + (r.Int63() % numTransactions)
+		readID := datagen.TransactionBaseID + (r.Int63() % datagen.TransactionCount)
 		row, err := txn.ReadRow(
 			wf.ctx,
-			TransactionTableName,
+			datagen.TransactionTableName,
 			spanner.Key{readID},
 			[]string{"fromUserId", "toUserId"})
 		if err != nil {
@@ -152,16 +143,13 @@ func (wf *OLTP) multiRandomRead(r *rand.Rand) error {
 
 // Read and update a single row.
 func (wf *OLTP) readAndUpdate(r *rand.Rand) error {
-	const numTransactions = 20000000
-	const baseTransactionID int64 = 1000000000000000000
-
 	// This should be both valid and random, hence we need to know the range of valid
 	// identifiers within the table.
-	updateID := baseTransactionID + (r.Int63() % numTransactions)
+	updateID := datagen.TransactionBaseID + (r.Int63() % datagen.TransactionCount)
 	_, err := wf.client.ReadWriteTransaction(wf.ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		row, err := txn.ReadRow(
 			wf.ctx,
-			TransactionTableName,
+			datagen.TransactionTableName,
 			spanner.Key{updateID},
 			[]string{"fromUserId", "toUserId"})
 		if err != nil {
@@ -173,7 +161,7 @@ func (wf *OLTP) readAndUpdate(r *rand.Rand) error {
 		}
 
 		// Swapping the user IDs guarantees that referential integrity is maintained.
-		mutation := spanner.UpdateMap(TransactionTableName, map[string]interface{}{
+		mutation := spanner.UpdateMap(datagen.TransactionTableName, map[string]interface{}{
 			"id":         updateID,
 			"fromUserId": toUserID,
 			"toUserId":   fromUserID,
@@ -192,7 +180,7 @@ func (wf *OLTP) blindWrite(r *rand.Rand) (int64, error) {
 	// For these tests, referential integrity is un-important since there are no defined
 	// foreign key constraints.
 	addID := r.Int63()
-	mutation := spanner.InsertMap(TransactionTableName, map[string]interface{}{
+	mutation := spanner.InsertMap(datagen.TransactionTableName, map[string]interface{}{
 		"id":         addID,
 		"companyId":  r.Int63(),
 		"fromUserId": r.Int63(),
@@ -208,7 +196,7 @@ func (wf *OLTP) blindWrite(r *rand.Rand) (int64, error) {
 
 // Delete a predefined row.
 func (wf *OLTP) delete(r *rand.Rand, key int64) error {
-	mutation := spanner.Delete(TransactionTableName, spanner.Key{key})
+	mutation := spanner.Delete(datagen.TransactionTableName, spanner.Key{key})
 	_, err := wf.client.Apply(wf.ctx, []*spanner.Mutation{mutation})
 	if err != nil {
 		return err
