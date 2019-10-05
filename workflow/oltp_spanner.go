@@ -29,32 +29,25 @@ func (wf *OLTPSpanner) Run() error {
 	if err := wf.runner.runTest(wf.simpleRandomReadRow, "OLTP.simpleRandomReadRow"); err != nil {
 		return err
 	}
-
 	if err := wf.runner.runTest(wf.simpleRandomQuery, "OLTP.simpleRandomQuery"); err != nil {
 		return err
 	}
-
 	if err := wf.runner.runTest(wf.multiSequentialRead, "OLTP.multiSequentialRead"); err != nil {
 		return err
 	}
-
 	if err := wf.runner.runTest(wf.multiRandomRead, "OLTP.multiRandomRead"); err != nil {
 		return err
 	}
-
 	if err := wf.runner.runTest(wf.readAndUpdate, "OLTP.readAndUpdate"); err != nil {
 		return err
 	}
-
 	keys, err := wf.runner.runTestReturns(wf.blindWrite, "OLTP.blindWrite")
 	if err != nil {
 		return err
 	}
-
 	if err := wf.runner.runTestWith(wf.delete, keys, "OLTP.delete"); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -96,7 +89,7 @@ func (wf *OLTPSpanner) simpleRandomQuery(r *rand.Rand) error {
 	return nil
 }
 
-// Read multiple (5) rows using a sequential Read.
+// Read multiple rows using a sequential Read.
 func (wf *OLTPSpanner) multiSequentialRead(r *rand.Rand) error {
 	const numReads = 100
 
@@ -117,7 +110,7 @@ func (wf *OLTPSpanner) multiSequentialRead(r *rand.Rand) error {
 	return nil
 }
 
-// Read multiple (5) rows using a random Read.
+// Read multiple rows using a random Read.
 func (wf *OLTPSpanner) multiRandomRead(r *rand.Rand) error {
 	const numReads = 5
 
