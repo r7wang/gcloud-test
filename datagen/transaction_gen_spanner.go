@@ -40,11 +40,11 @@ func (gen *TransactionGeneratorSpanner) Generate() error {
 
 	// For referential integrity, we still need to ensure that transactions select from a list of
 	// valid company and user IDs.
-	companyIDs, err := gen.queryIds("Companies")
+	companyIDs, err := gen.queryIds(CompanyTableName)
 	if err != nil {
 		return err
 	}
-	userIDs, err := gen.queryIds("Users")
+	userIDs, err := gen.queryIds(UserTableName)
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,6 @@ func (gen *TransactionGeneratorSpanner) Generate() error {
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -79,8 +78,8 @@ func (gen *TransactionGeneratorSpanner) queryIds(tableName string) ([]int64, err
 	iter := gen.client.Single().Query(gen.ctx, stmt)
 	timer.Track(start, fmt.Sprintf("TransactionGenerator.queryIds[%s].SQL", tableName))
 	defer iter.Stop()
-	companyIDs := []int64{}
-	var companyID int64
+	ids := []int64{}
+	var id int64
 	for {
 		row, err := iter.Next()
 		if err != nil {
@@ -89,12 +88,12 @@ func (gen *TransactionGeneratorSpanner) queryIds(tableName string) ([]int64, err
 			}
 			return nil, err
 		}
-		if err := row.Columns(&companyID); err != nil {
+		if err := row.Columns(&id); err != nil {
 			return nil, err
 		}
-		companyIDs = append(companyIDs, companyID)
+		ids = append(ids, id)
 	}
-	return companyIDs, nil
+	return ids, nil
 }
 
 func (gen *TransactionGeneratorSpanner) generateForBucket(
@@ -105,8 +104,6 @@ func (gen *TransactionGeneratorSpanner) generateForBucket(
 ) error {
 
 	defer timer.Track(time.Now(), "TransactionGenerator.generateForBucket")
-
-	const tableName = "Transactions"
 
 	// Define the allowable time range.
 	const timeRange = TransactionMaxTime - TransactionMinTime
@@ -129,7 +126,7 @@ func (gen *TransactionGeneratorSpanner) generateForBucket(
 		unixTime := rand.Int63()%timeRange + TransactionMinTime
 
 		// Although unrealistic, it's probably sufficient to only use "second" granularity here.
-		mutation := spanner.InsertMap(tableName, map[string]interface{}{
+		mutation := spanner.InsertMap(TransactionTableName, map[string]interface{}{
 			"id":         TransactionBaseID + i,
 			"companyId":  companyID,
 			"fromUserId": fromUserID,
