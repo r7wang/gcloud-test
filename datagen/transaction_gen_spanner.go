@@ -13,13 +13,25 @@ import (
 
 // TransactionGeneratorSpanner populates the transactions table within the ledger database.
 type TransactionGeneratorSpanner struct {
-	ctx    context.Context
-	client *spanner.Client
+	ctx     context.Context
+	client  *spanner.Client
+	rand    *rand.Rand
+	metrics *timer.Metrics
 }
 
 // NewTransactionGeneratorSpanner returns a new TransactionGeneratorSpanner instance.
-func NewTransactionGeneratorSpanner(ctx context.Context, client *spanner.Client) *TransactionGeneratorSpanner {
-	return &TransactionGeneratorSpanner{ctx: ctx, client: client}
+func NewTransactionGeneratorSpanner(
+	ctx context.Context,
+	client *spanner.Client,
+	metrics *timer.Metrics,
+) *TransactionGeneratorSpanner {
+
+	return &TransactionGeneratorSpanner{
+		ctx:     ctx,
+		client:  client,
+		rand:    rand.New(rand.NewSource(rand.Int63())),
+		metrics: metrics,
+	}
 }
 
 // Generate adds a random list of transactions to the table.
@@ -36,7 +48,7 @@ func NewTransactionGeneratorSpanner(ctx context.Context, client *spanner.Client)
 // See the links below for more information.
 //		https://cloud.google.com/spanner/docs/bulk-loading
 func (gen *TransactionGeneratorSpanner) Generate() error {
-	defer timer.Track(time.Now(), "TransactionGenerator.Generate")
+	defer gen.metrics.Track(time.Now(), "TransactionGenerator.Generate")
 
 	// For referential integrity, we still need to ensure that transactions select from a list of
 	// valid company and user IDs.
@@ -69,14 +81,14 @@ func (gen *TransactionGeneratorSpanner) Generate() error {
 }
 
 func (gen *TransactionGeneratorSpanner) queryIds(tableName string) ([]int64, error) {
-	defer timer.Track(time.Now(), fmt.Sprintf("TransactionGenerator.queryIds[%s]", tableName))
+	defer gen.metrics.Track(time.Now(), fmt.Sprintf("TransactionGenerator.queryIds[%s]", tableName))
 
 	stmt := spanner.Statement{
 		SQL: fmt.Sprintf(`SELECT Id FROM %s`, tableName),
 	}
 	start := time.Now()
 	iter := gen.client.Single().Query(gen.ctx, stmt)
-	timer.Track(start, fmt.Sprintf("TransactionGenerator.queryIds[%s].SQL", tableName))
+	gen.metrics.Track(start, fmt.Sprintf("TransactionGenerator.queryIds[%s].SQL", tableName))
 	defer iter.Stop()
 	ids := []int64{}
 	var id int64
@@ -103,7 +115,7 @@ func (gen *TransactionGeneratorSpanner) generateForBucket(
 	userIDs []int64,
 ) error {
 
-	defer timer.Track(time.Now(), "TransactionGenerator.generateForBucket")
+	defer gen.metrics.Track(time.Now(), "TransactionGenerator.generateForBucket")
 
 	// Define the allowable time range.
 	const timeRange = TransactionMaxTime - TransactionMinTime
@@ -114,16 +126,16 @@ func (gen *TransactionGeneratorSpanner) generateForBucket(
 	// locality without creating any hot spots.
 	mutations := []*spanner.Mutation{}
 	for i := min; i < max; i++ {
-		companyIdx := rand.Int31() % int32(len(companyIDs))
+		companyIdx := gen.rand.Int31() % int32(len(companyIDs))
 		companyID := companyIDs[companyIdx]
 
-		fromUserIdx := rand.Int31() % int32(len(userIDs))
+		fromUserIdx := gen.rand.Int31() % int32(len(userIDs))
 		fromUserID := userIDs[fromUserIdx]
 
-		toUserIdx := rand.Int31() % int32(len(userIDs))
+		toUserIdx := gen.rand.Int31() % int32(len(userIDs))
 		toUserID := userIDs[toUserIdx]
 
-		unixTime := rand.Int63()%timeRange + TransactionMinTime
+		unixTime := gen.rand.Int63()%timeRange + TransactionMinTime
 
 		// Although unrealistic, it's probably sufficient to only use "second" granularity here.
 		mutation := spanner.InsertMap(TransactionTableName, map[string]interface{}{
@@ -137,6 +149,6 @@ func (gen *TransactionGeneratorSpanner) generateForBucket(
 	}
 	start := time.Now()
 	_, err := gen.client.Apply(gen.ctx, mutations)
-	timer.Track(start, "TransactionGenerator.generateForBucket.SQL")
+	gen.metrics.Track(start, "TransactionGenerator.generateForBucket.SQL")
 	return err
 }

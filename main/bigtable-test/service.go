@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"cloud.google.com/go/bigtable"
+	"github.com/r7wang/gcloud-test/timer"
 	"github.com/r7wang/gcloud-test/workflow"
 )
 
@@ -31,12 +32,13 @@ func run(
 	w io.Writer,
 ) error {
 
-	oltp := workflow.NewOLTPBigtable(ctx, client)
+	metrics := timer.NewMetrics()
+	oltp := workflow.NewOLTPBigtable(ctx, client, metrics)
 	if err := oltp.Run(); err != nil {
 		fmt.Fprintf(w, "Failed to run transactional workflow: %v\n", err)
 		return err
 	}
-
+	fmt.Fprintf(w, metrics.Summarize())
 	return nil
 }
 

@@ -82,8 +82,7 @@ func (wf *OLTPSpanner) simpleRandomQuery(r *rand.Rand) error {
 	}
 	iter := wf.client.Single().Query(wf.ctx, stmt)
 	defer iter.Stop()
-	var fromUserID, toUserID int64
-	if err := wf.scanIterator(iter, &fromUserID, &toUserID); err != nil {
+	if err := wf.scanIterator(iter); err != nil {
 		return err
 	}
 	return nil
@@ -103,8 +102,7 @@ func (wf *OLTPSpanner) multiSequentialRead(r *rand.Rand) error {
 		},
 		[]string{"fromUserId", "toUserId"})
 	defer iter.Stop()
-	var fromUserID, toUserID int64
-	if err := wf.scanIterator(iter, &fromUserID, &toUserID); err != nil {
+	if err := wf.scanIterator(iter); err != nil {
 		return err
 	}
 	return nil
@@ -197,7 +195,8 @@ func (wf *OLTPSpanner) delete(r *rand.Rand, key int64) error {
 	return nil
 }
 
-func (wf *OLTPSpanner) scanIterator(iter *spanner.RowIterator, collectors ...interface{}) error {
+func (wf *OLTPSpanner) scanIterator(iter *spanner.RowIterator) error {
+	var fromUserID, toUserID int64
 	for {
 		row, err := iter.Next()
 		if err != nil {
@@ -206,7 +205,7 @@ func (wf *OLTPSpanner) scanIterator(iter *spanner.RowIterator, collectors ...int
 			}
 			return err
 		}
-		if err := row.Columns(collectors...); err != nil {
+		if err := row.Columns(&fromUserID, &toUserID); err != nil {
 			return err
 		}
 	}

@@ -12,21 +12,24 @@ import (
 
 // TransactionGeneratorBigtable populates the transactions table within the ledger instance.
 type TransactionGeneratorBigtable struct {
-	ctx    context.Context
-	client *bigtable.Client
-	rand   *rand.Rand
+	ctx     context.Context
+	client  *bigtable.Client
+	rand    *rand.Rand
+	metrics *timer.Metrics
 }
 
 // NewTransactionGeneratorBigtable returns a new TransactionGeneratorBigtable instance.
 func NewTransactionGeneratorBigtable(
 	ctx context.Context,
 	client *bigtable.Client,
+	metrics *timer.Metrics,
 ) *TransactionGeneratorBigtable {
 
 	return &TransactionGeneratorBigtable{
-		ctx:    ctx,
-		client: client,
-		rand:   rand.New(rand.NewSource(rand.Int63())),
+		ctx:     ctx,
+		client:  client,
+		rand:    rand.New(rand.NewSource(rand.Int63())),
+		metrics: metrics,
 	}
 }
 
@@ -46,7 +49,7 @@ func NewTransactionGeneratorBigtable(
 //
 // TODO: Consider the use of export/import instead of writing a generator.
 func (gen *TransactionGeneratorBigtable) Generate() error {
-	defer timer.Track(time.Now(), "TransactionGenerator.Generate")
+	defer gen.metrics.Track(time.Now(), "TransactionGenerator.Generate")
 
 	// For referential integrity, we still need to ensure that transactions select from a list of
 	// valid company and user IDs.
@@ -77,7 +80,7 @@ func (gen *TransactionGeneratorBigtable) Generate() error {
 }
 
 func (gen *TransactionGeneratorBigtable) queryIds(tableName string) ([]string, error) {
-	defer timer.Track(time.Now(), fmt.Sprintf("TransactionGenerator.queryIds[%s]", tableName))
+	defer gen.metrics.Track(time.Now(), fmt.Sprintf("TransactionGenerator.queryIds[%s]", tableName))
 
 	table := gen.client.Open(tableName)
 	ids := []string{}
@@ -98,7 +101,7 @@ func (gen *TransactionGeneratorBigtable) generateForBucket(
 	userIDs []string,
 ) error {
 
-	defer timer.Track(time.Now(), "TransactionGenerator.generateForBucket")
+	defer gen.metrics.Track(time.Now(), "TransactionGenerator.generateForBucket")
 
 	// Define the allowable time range.
 	const timeRange = TransactionMaxTime - TransactionMinTime

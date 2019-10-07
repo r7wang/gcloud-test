@@ -11,13 +11,23 @@ import (
 
 // CompanyGeneratorSpanner populates the companies table within the ledger database.
 type CompanyGeneratorSpanner struct {
-	ctx    context.Context
-	client *spanner.Client
+	ctx     context.Context
+	client  *spanner.Client
+	metrics *timer.Metrics
 }
 
 // NewCompanyGeneratorSpanner returns a new CompanyGeneratorSpanner instance.
-func NewCompanyGeneratorSpanner(ctx context.Context, client *spanner.Client) *CompanyGeneratorSpanner {
-	return &CompanyGeneratorSpanner{ctx: ctx, client: client}
+func NewCompanyGeneratorSpanner(
+	ctx context.Context,
+	client *spanner.Client,
+	metrics *timer.Metrics,
+) *CompanyGeneratorSpanner {
+
+	return &CompanyGeneratorSpanner{
+		ctx:     ctx,
+		client:  client,
+		metrics: metrics,
+	}
 }
 
 // Generate adds a predefined list of companies to the table. We can do this in multiple ways.
@@ -37,7 +47,7 @@ func NewCompanyGeneratorSpanner(ctx context.Context, client *spanner.Client) *Co
 //		https://cloud.google.com/spanner/docs/dml-syntax
 //		https://cloud.google.com/spanner/docs/transactions
 func (gen *CompanyGeneratorSpanner) Generate() error {
-	defer timer.Track(time.Now(), "CompanyGenerator.Generate")
+	defer gen.metrics.Track(time.Now(), "CompanyGenerator.Generate")
 
 	mutations := []*spanner.Mutation{}
 	for _, companyName := range CompanyNames {

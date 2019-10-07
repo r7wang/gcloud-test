@@ -7,19 +7,31 @@ import (
 
 	"cloud.google.com/go/bigtable"
 	"github.com/r7wang/gcloud-test/datagen"
+	"github.com/r7wang/gcloud-test/timer"
 )
 
 // OLTPBigtable defines operations to exercise common types of transactional workflows with certain
 // semantic guarantees.
 type OLTPBigtable struct {
-	ctx    context.Context
-	runner *runner
-	client *bigtable.Client
+	ctx     context.Context
+	runner  *runner
+	client  *bigtable.Client
+	metrics *timer.Metrics
 }
 
 // NewOLTPBigtable returns a new OLTPBigtable instance.
-func NewOLTPBigtable(ctx context.Context, client *bigtable.Client) *OLTPBigtable {
-	return &OLTPBigtable{ctx: ctx, runner: &runner{}, client: client}
+func NewOLTPBigtable(
+	ctx context.Context,
+	client *bigtable.Client,
+	metrics *timer.Metrics,
+) *OLTPBigtable {
+
+	return &OLTPBigtable{
+		ctx:     ctx,
+		runner:  newRunner(metrics),
+		client:  client,
+		metrics: metrics,
+	}
 }
 
 // Run sequentially executes all of the test workflows.

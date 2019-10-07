@@ -12,13 +12,23 @@ import (
 
 // UserGeneratorBigtable populates the users table within the ledger database.
 type UserGeneratorBigtable struct {
-	ctx    context.Context
-	client *bigtable.Client
+	ctx     context.Context
+	client  *bigtable.Client
+	metrics *timer.Metrics
 }
 
 // NewUserGeneratorBigtable returns a new UserGeneratorBigtable instance.
-func NewUserGeneratorBigtable(ctx context.Context, client *bigtable.Client) *UserGeneratorBigtable {
-	return &UserGeneratorBigtable{ctx: ctx, client: client}
+func NewUserGeneratorBigtable(
+	ctx context.Context,
+	client *bigtable.Client,
+	metrics *timer.Metrics,
+) *UserGeneratorBigtable {
+
+	return &UserGeneratorBigtable{
+		ctx:     ctx,
+		client:  client,
+		metrics: metrics,
+	}
 }
 
 // Generate adds a random list of users to the table.
@@ -30,7 +40,7 @@ func NewUserGeneratorBigtable(ctx context.Context, client *bigtable.Client) *Use
 // See the links below for more information:
 //		https://godoc.org/cloud.google.com/go/bigtable#Table.ApplyBulk
 func (gen *UserGeneratorBigtable) Generate() error {
-	defer timer.Track(time.Now(), "UserGenerator.Generate")
+	defer gen.metrics.Track(time.Now(), "UserGenerator.Generate")
 
 	const bucketSize = 100000
 	const numBuckets = UserCount / bucketSize
@@ -50,7 +60,7 @@ func (gen *UserGeneratorBigtable) Generate() error {
 }
 
 func (gen *UserGeneratorBigtable) generateForBucket(min int, max int) error {
-	defer timer.Track(time.Now(), fmt.Sprintf("UserGenerator.generateForBucket-%d", max))
+	defer gen.metrics.Track(time.Now(), "UserGenerator.generateForBucket")
 
 	mutations := []*bigtable.Mutation{}
 	rowKeys := []string{}

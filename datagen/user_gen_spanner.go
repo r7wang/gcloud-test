@@ -12,13 +12,23 @@ import (
 
 // UserGeneratorSpanner populates the users table within the ledger database.
 type UserGeneratorSpanner struct {
-	ctx    context.Context
-	client *spanner.Client
+	ctx     context.Context
+	client  *spanner.Client
+	metrics *timer.Metrics
 }
 
 // NewUserGeneratorSpanner returns a new UserGeneratorSpanner instance.
-func NewUserGeneratorSpanner(ctx context.Context, client *spanner.Client) *UserGeneratorSpanner {
-	return &UserGeneratorSpanner{ctx: ctx, client: client}
+func NewUserGeneratorSpanner(
+	ctx context.Context,
+	client *spanner.Client,
+	metrics *timer.Metrics,
+) *UserGeneratorSpanner {
+
+	return &UserGeneratorSpanner{
+		ctx:     ctx,
+		client:  client,
+		metrics: metrics,
+	}
 }
 
 // Generate adds a random list of users to the table.
@@ -26,7 +36,7 @@ func NewUserGeneratorSpanner(ctx context.Context, client *spanner.Client) *UserG
 // See the links below for more information.
 //		https://cloud.google.com/spanner/docs/bulk-loading
 func (gen *UserGeneratorSpanner) Generate() error {
-	defer timer.Track(time.Now(), "UserGenerator.Generate")
+	defer gen.metrics.Track(time.Now(), "UserGenerator.Generate")
 
 	// We are going to probably want enough users to demonstrate scale.
 	const bucketSize = 5000
@@ -47,7 +57,7 @@ func (gen *UserGeneratorSpanner) Generate() error {
 }
 
 func (gen *UserGeneratorSpanner) generateForBucket(min int, max int) error {
-	defer timer.Track(time.Now(), fmt.Sprintf("UserGenerator.generateForBucket-%d", max))
+	defer gen.metrics.Track(time.Now(), "UserGenerator.generateForBucket")
 
 	mutations := []*spanner.Mutation{}
 	for userIdx := min; userIdx < max; userIdx++ {

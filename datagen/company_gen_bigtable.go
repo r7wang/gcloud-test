@@ -11,13 +11,23 @@ import (
 
 // CompanyGeneratorBigtable populates the companies table within the ledger database.
 type CompanyGeneratorBigtable struct {
-	ctx    context.Context
-	client *bigtable.Client
+	ctx     context.Context
+	client  *bigtable.Client
+	metrics *timer.Metrics
 }
 
 // NewCompanyGeneratorBigtable returns a new CompanyGeneratorBigtable instance.
-func NewCompanyGeneratorBigtable(ctx context.Context, client *bigtable.Client) *CompanyGeneratorBigtable {
-	return &CompanyGeneratorBigtable{ctx: ctx, client: client}
+func NewCompanyGeneratorBigtable(
+	ctx context.Context,
+	client *bigtable.Client,
+	metrics *timer.Metrics,
+) *CompanyGeneratorBigtable {
+
+	return &CompanyGeneratorBigtable{
+		ctx:     ctx,
+		client:  client,
+		metrics: metrics,
+	}
 }
 
 // Generate adds a predefined list of companies to the table.
@@ -26,7 +36,7 @@ func NewCompanyGeneratorBigtable(ctx context.Context, client *bigtable.Client) *
 // the company table or vice versa, this will require multiple lookups across different tables.
 // This must be done at the application layer.
 func (gen *CompanyGeneratorBigtable) Generate() error {
-	defer timer.Track(time.Now(), "CompanyGenerator.Generate")
+	defer gen.metrics.Track(time.Now(), "CompanyGenerator.Generate")
 
 	mutations := []*bigtable.Mutation{}
 	rowKeys := []string{}

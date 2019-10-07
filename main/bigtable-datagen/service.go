@@ -10,6 +10,7 @@ import (
 
 	"cloud.google.com/go/bigtable"
 	"github.com/r7wang/gcloud-test/datagen"
+	"github.com/r7wang/gcloud-test/timer"
 )
 
 func createClients(
@@ -38,6 +39,8 @@ func run(
 	w io.Writer,
 ) error {
 
+	metrics := timer.NewMetrics()
+
 	schema := datagen.NewSchemaBigtable(ctx, adminClient)
 	if err := schema.CreateTables(); err != nil {
 		fmt.Fprintf(w, "Failed to instantiate schema: %v\n", err)
@@ -45,27 +48,28 @@ func run(
 	}
 	fmt.Fprintf(w, "Created schema\n")
 
-	companyGen := datagen.NewCompanyGeneratorBigtable(ctx, dataClient)
+	companyGen := datagen.NewCompanyGeneratorBigtable(ctx, dataClient, metrics)
 	if err := companyGen.Generate(); err != nil {
 		fmt.Fprintf(w, "Failed to generate companies: %v\n", err)
 		return err
 	}
 	fmt.Fprintf(w, "Inserted companies\n")
 
-	userGen := datagen.NewUserGeneratorBigtable(ctx, dataClient)
+	userGen := datagen.NewUserGeneratorBigtable(ctx, dataClient, metrics)
 	if err := userGen.Generate(); err != nil {
 		fmt.Fprintf(w, "Failed to generate users: %v\n", err)
 		return err
 	}
 	fmt.Fprintf(w, "Inserted users\n")
 
-	transactionGen := datagen.NewTransactionGeneratorBigtable(ctx, dataClient)
+	transactionGen := datagen.NewTransactionGeneratorBigtable(ctx, dataClient, metrics)
 	if err := transactionGen.Generate(); err != nil {
 		fmt.Fprintf(w, "Failed to generate transactions: %v\n", err)
 		return err
 	}
 	fmt.Fprintf(w, "Inserted transactions\n")
 
+	fmt.Fprintf(w, metrics.Summarize())
 	return nil
 }
 
