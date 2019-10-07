@@ -69,7 +69,11 @@ func run(
 	}
 	fmt.Fprintf(w, "Inserted transactions\n")
 
-	fmt.Fprintf(w, metrics.Summarize())
+	summary, err := metrics.Summarize()
+	if err != nil {
+		fmt.Fprintf(w, "Failed to summarize metrics: %v\n", err)
+	}
+	fmt.Fprintf(w, summary)
 	return nil
 }
 

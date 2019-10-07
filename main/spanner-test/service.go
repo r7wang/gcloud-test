@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"cloud.google.com/go/spanner"
+	"github.com/r7wang/gcloud-test/timer"
 	"github.com/r7wang/gcloud-test/workflow"
 )
 
@@ -28,6 +29,8 @@ func run(
 	db string,
 ) error {
 
+	metrics := timer.NewMetrics()
+
 	oltp := workflow.NewOLTPSpanner(ctx, client)
 	if err := oltp.Run(); err != nil {
 		fmt.Fprintf(w, "Failed to run transactional workflow: %v\n", err)
@@ -40,6 +43,11 @@ func run(
 		return err
 	}
 
+	summary, err := metrics.Summarize()
+	if err != nil {
+		fmt.Fprintf(w, "Failed to summarize metrics: %v\n", err)
+	}
+	fmt.Fprintf(w, summary)
 	return nil
 }
 

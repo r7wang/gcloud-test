@@ -1,4 +1,4 @@
-# Spanner
+# Google Cloud
 
 ## Build
-`make`
+`make` will build each of the four relevant binaries.

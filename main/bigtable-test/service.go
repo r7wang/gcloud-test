@@ -33,12 +33,18 @@ func run(
 ) error {
 
 	metrics := timer.NewMetrics()
+
 	oltp := workflow.NewOLTPBigtable(ctx, client, metrics)
 	if err := oltp.Run(); err != nil {
 		fmt.Fprintf(w, "Failed to run transactional workflow: %v\n", err)
 		return err
 	}
-	fmt.Fprintf(w, metrics.Summarize())
+
+	summary, err := metrics.Summarize()
+	if err != nil {
+		fmt.Fprintf(w, "Failed to summarize metrics: %v\n", err)
+	}
+	fmt.Fprintf(w, summary)
 	return nil
 }
 

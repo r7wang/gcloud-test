@@ -141,18 +141,14 @@ func (wf *OLTPBigtable) delete(r *rand.Rand, key int64) error {
 }
 
 func (wf *OLTPBigtable) scanRow(row bigtable.Row) bool {
-	var fromUserID, toUserID string
 	cf := row[datagen.DefaultColumnFamily]
 	for _, col := range cf {
 		if col.Column == fmt.Sprintf("%s:%s", datagen.DefaultColumnFamily, datagen.TransactionFromUserColumn) {
-			fromUserID = string(col.Value)
 			continue
 		}
 		if col.Column == fmt.Sprintf("%s:%s", datagen.DefaultColumnFamily, datagen.TransactionToUserColumn) {
-			toUserID = string(col.Value)
 			continue
 		}
 	}
-	fmt.Println(fromUserID, toUserID)
 	return true
 }
