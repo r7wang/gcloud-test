@@ -62,7 +62,7 @@ func (m *Metrics) Summarize() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		summary := fmt.Sprintf("%s: samples=%d, mean=%.2f, median=%.2f, pct75=%.2f, pct99=%.2f",
+		summary := fmt.Sprintf("%s: samples=%d, mean=%.2fms, median=%.2fms, pct75=%.2fms, pct99=%.2fms",
 			name,
 			len(raw),
 			mean/nanosInMillis,
