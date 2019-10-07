@@ -14,7 +14,7 @@ const (
 	// TransactionTableName names the table that stores transaction details.
 	TransactionTableName = "Transactions"
 	// TransactionCompanyColumn is the column name for the subject ID of a transaction.
-	TransactionCompanyColumn = "CompanyID"
+	TransactionCompanyColumn = "CompanyId"
 	// TransactionFromUserColumn is the column name for the sender ID of a transaction.
 	TransactionFromUserColumn = "FromUserId"
 	// TransactionToUserColumn is the column name for the receiver ID of a transaction.

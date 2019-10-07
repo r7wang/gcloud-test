@@ -38,8 +38,11 @@ func NewTransactionGeneratorBigtable(
 // insertion time was later.
 //
 // In this implementation, we are choosing to store foreign key references as strings instead of
-// int64. One of the reasons is because those keys are also stored as strings. We may want to
-// consider converting all keys into []byte.
+// int64. One of the reasons is because those keys are also stored as strings. Bigtable
+// documentation recommends the use of human-readable keys.
+//
+// See the links below for more information:
+//		https://cloud.google.com/bigtable/docs/schema-design#types_of_row_keys
 //
 // TODO: Consider the use of export/import instead of writing a generator.
 func (gen *TransactionGeneratorBigtable) Generate() error {
@@ -121,7 +124,7 @@ func (gen *TransactionGeneratorBigtable) generateForBucket(
 		mutation.Set(DefaultColumnFamily, TransactionFromUserColumn, ts, []byte(fromUserID))
 		mutation.Set(DefaultColumnFamily, TransactionToUserColumn, ts, []byte(toUserID))
 		mutations = append(mutations, mutation)
-		rowKeys = append(rowKeys, int64String(TransactionBaseID+i))
+		rowKeys = append(rowKeys, Int64String(TransactionBaseID+i))
 	}
 	table := gen.client.Open(TransactionTableName)
 	if err := mergeErrors(table.ApplyBulk(gen.ctx, rowKeys, mutations)); err != nil {

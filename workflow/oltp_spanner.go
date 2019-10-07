@@ -38,7 +38,7 @@ func (wf *OLTPSpanner) Run() error {
 	if err := wf.runner.runTest(wf.multiRandomRead, "OLTP.multiRandomRead"); err != nil {
 		return err
 	}
-	if err := wf.runner.runTest(wf.readAndUpdate, "OLTP.readAndUpdate"); err != nil {
+	if err := wf.runner.runTest(wf.atomicSwap, "OLTP.atomicSwap"); err != nil {
 		return err
 	}
 	keys, err := wf.runner.runTestReturns(wf.blindWrite, "OLTP.blindWrite")
@@ -53,7 +53,7 @@ func (wf *OLTPSpanner) Run() error {
 
 // Read a single row using ReadRow.
 func (wf *OLTPSpanner) simpleRandomReadRow(r *rand.Rand) error {
-	readID := datagen.TransactionBaseID + (r.Int63() % datagen.TransactionCount)
+	readID := datagen.RandomGeneratedTransactionID(r)
 	row, err := wf.client.Single().ReadRow(
 		wf.ctx,
 		datagen.TransactionTableName,
@@ -71,7 +71,7 @@ func (wf *OLTPSpanner) simpleRandomReadRow(r *rand.Rand) error {
 
 // Read a single row using the Query and DML.
 func (wf *OLTPSpanner) simpleRandomQuery(r *rand.Rand) error {
-	readID := datagen.TransactionBaseID + (r.Int63() % datagen.TransactionCount)
+	readID := datagen.RandomGeneratedTransactionID(r)
 	stmt := spanner.Statement{
 		SQL: `SELECT t.FromUserId, t.ToUserId
 				FROM Transactions t
@@ -93,13 +93,13 @@ func (wf *OLTPSpanner) simpleRandomQuery(r *rand.Rand) error {
 func (wf *OLTPSpanner) multiSequentialRead(r *rand.Rand) error {
 	const numReads = 100
 
-	startReadID := datagen.TransactionBaseID + (r.Int63() % datagen.TransactionCount)
+	startReadID, endReadID := datagen.RandomGeneratedTransactionIDRange(r, numReads)
 	iter := wf.client.Single().Read(
 		wf.ctx,
 		datagen.TransactionTableName,
 		spanner.KeyRange{
 			Start: spanner.Key{startReadID},
-			End:   spanner.Key{startReadID + numReads},
+			End:   spanner.Key{endReadID},
 		},
 		[]string{"fromUserId", "toUserId"})
 	defer iter.Stop()
@@ -117,7 +117,7 @@ func (wf *OLTPSpanner) multiRandomRead(r *rand.Rand) error {
 	txn := wf.client.ReadOnlyTransaction()
 	defer txn.Close()
 	for i := 0; i < numReads; i++ {
-		readID := datagen.TransactionBaseID + (r.Int63() % datagen.TransactionCount)
+		readID := datagen.RandomGeneratedTransactionID(r)
 		row, err := txn.ReadRow(
 			wf.ctx,
 			datagen.TransactionTableName,
@@ -135,10 +135,10 @@ func (wf *OLTPSpanner) multiRandomRead(r *rand.Rand) error {
 }
 
 // Read and update a single row.
-func (wf *OLTPSpanner) readAndUpdate(r *rand.Rand) error {
+func (wf *OLTPSpanner) atomicSwap(r *rand.Rand) error {
 	// This should be both valid and random, hence we need to know the range of valid
 	// identifiers within the table.
-	updateID := datagen.TransactionBaseID + (r.Int63() % datagen.TransactionCount)
+	updateID := datagen.RandomGeneratedTransactionID(r)
 	_, err := wf.client.ReadWriteTransaction(wf.ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
 		row, err := txn.ReadRow(
 			wf.ctx,

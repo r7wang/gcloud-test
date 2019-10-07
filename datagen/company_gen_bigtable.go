@@ -38,7 +38,7 @@ func (gen *CompanyGeneratorBigtable) Generate() error {
 			bigtable.Now(),
 			[]byte(companyName))
 		mutations = append(mutations, mutation)
-		rowKeys = append(rowKeys, int64String(rand.Int63()))
+		rowKeys = append(rowKeys, Int64String(rand.Int63()))
 	}
 	table := gen.client.Open(CompanyTableName)
 	if err := mergeErrors(table.ApplyBulk(gen.ctx, rowKeys, mutations)); err != nil {

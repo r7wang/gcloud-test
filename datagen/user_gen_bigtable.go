@@ -62,7 +62,7 @@ func (gen *UserGeneratorBigtable) generateForBucket(min int, max int) error {
 			bigtable.Now(),
 			[]byte(fmt.Sprintf("User-%d", userIdx)))
 		mutations = append(mutations, mutation)
-		rowKeys = append(rowKeys, int64String(rand.Int63()))
+		rowKeys = append(rowKeys, Int64String(rand.Int63()))
 	}
 	table := gen.client.Open(UserTableName)
 	if err := mergeErrors(table.ApplyBulk(gen.ctx, rowKeys, mutations)); err != nil {
