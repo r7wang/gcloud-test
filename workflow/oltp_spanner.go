@@ -6,6 +6,7 @@ import (
 
 	"cloud.google.com/go/spanner"
 	"github.com/r7wang/gcloud-test/datagen"
+	"github.com/r7wang/gcloud-test/timer"
 	"google.golang.org/api/iterator"
 )
 
@@ -18,8 +19,16 @@ type OLTPSpanner struct {
 }
 
 // NewOLTPSpanner returns a new OLTPSpanner instance.
-func NewOLTPSpanner(ctx context.Context, client *spanner.Client) *OLTPSpanner {
-	return &OLTPSpanner{ctx: ctx, runner: &runner{}, client: client}
+func NewOLTPSpanner(
+	ctx context.Context,
+	client *spanner.Client,
+	metrics *timer.Metrics,
+) *OLTPSpanner {
+
+	return &OLTPSpanner{
+		ctx:    ctx,
+		runner: newRunner(metrics),
+		client: client}
 }
 
 // Run sequentially executes all of the test workflows.

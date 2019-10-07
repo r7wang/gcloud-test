@@ -31,13 +31,13 @@ func run(
 
 	metrics := timer.NewMetrics()
 
-	oltp := workflow.NewOLTPSpanner(ctx, client)
+	oltp := workflow.NewOLTPSpanner(ctx, client, metrics)
 	if err := oltp.Run(); err != nil {
 		fmt.Fprintf(w, "Failed to run transactional workflow: %v\n", err)
 		return err
 	}
 
-	olap := workflow.NewOLAP(ctx, client)
+	olap := workflow.NewOLAPSpanner(ctx, client)
 	if err := olap.Run(); err != nil {
 		fmt.Fprintf(w, "Failed to run analytical workflow: %v\n", err)
 		return err
