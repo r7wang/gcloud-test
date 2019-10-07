@@ -37,7 +37,7 @@ func run(
 		return err
 	}
 
-	olap := workflow.NewOLAPSpanner(ctx, client)
+	olap := workflow.NewOLAPSpanner(ctx, client, metrics)
 	if err := olap.Run(); err != nil {
 		fmt.Fprintf(w, "Failed to run analytical workflow: %v\n", err)
 		return err
