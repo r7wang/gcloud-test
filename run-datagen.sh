@@ -19,7 +19,7 @@ DB_PATH="projects/${PROJECT_NAME}/instances/${INSTANCE_NAME}/databases/${DB_NAME
 gcloud spanner instances create ${INSTANCE_NAME} \
 	--config=regional-us-east4 \
 	--description="Ledger" \
-	--nodes=1
+	--nodes=3
 
 ${CMD} ${DB_PATH}
 
