@@ -16,6 +16,7 @@ type TransactionGeneratorSpanner struct {
 	ctx     context.Context
 	client  *spanner.Client
 	rand    *rand.Rand
+	rand2   *rand.Rand
 	metrics *timer.Metrics
 }
 
@@ -29,7 +30,8 @@ func NewTransactionGeneratorSpanner(
 	return &TransactionGeneratorSpanner{
 		ctx:     ctx,
 		client:  client,
-		rand:    rand.New(rand.NewSource(rand.Int63())),
+		rand:    rand.New(rand.NewSource(time.Now().UnixNano())),
+		rand2:   rand.New(rand.NewSource(time.Now().UnixNano())),
 		metrics: metrics,
 	}
 }
@@ -135,15 +137,15 @@ func (gen *TransactionGeneratorSpanner) generateForBucket(
 		toUserIdx := gen.rand.Int31() % int32(len(userIDs))
 		toUserID := userIDs[toUserIdx]
 
-		unixTime := gen.rand.Int63()%timeRange + TransactionMinTime
+		timeSec := gen.rand2.Int63()%timeRange + TransactionMinTime
+		timeNanos := gen.rand2.Int63() % 1000000000
 
-		// Although unrealistic, it's probably sufficient to only use "second" granularity here.
 		mutation := spanner.InsertMap(TransactionTableName, map[string]interface{}{
 			"id":         TransactionBaseID + i,
 			"companyId":  companyID,
 			"fromUserId": fromUserID,
 			"toUserId":   toUserID,
-			"time":       time.Unix(unixTime, 0),
+			"time":       time.Unix(timeSec, timeNanos),
 		})
 		mutations = append(mutations, mutation)
 	}

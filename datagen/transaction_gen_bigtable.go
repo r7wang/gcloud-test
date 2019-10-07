@@ -15,6 +15,7 @@ type TransactionGeneratorBigtable struct {
 	ctx     context.Context
 	client  *bigtable.Client
 	rand    *rand.Rand
+	rand2   *rand.Rand
 	metrics *timer.Metrics
 }
 
@@ -28,7 +29,8 @@ func NewTransactionGeneratorBigtable(
 	return &TransactionGeneratorBigtable{
 		ctx:     ctx,
 		client:  client,
-		rand:    rand.New(rand.NewSource(rand.Int63())),
+		rand:    rand.New(rand.NewSource(time.Now().UnixNano())),
+		rand2:   rand.New(rand.NewSource(time.Now().UnixNano())),
 		metrics: metrics,
 	}
 }
@@ -118,8 +120,9 @@ func (gen *TransactionGeneratorBigtable) generateForBucket(
 		toUserIdx := gen.rand.Int31() % int32(len(userIDs))
 		toUserID := userIDs[toUserIdx]
 
-		unixTime := gen.rand.Int63()%timeRange + TransactionMinTime
-		ts := bigtable.Time(time.Unix(unixTime, 0))
+		timeSec := gen.rand2.Int63()%timeRange + TransactionMinTime
+		timeNanos := gen.rand2.Int63() % 1000000000
+		ts := bigtable.Time(time.Unix(timeSec, timeNanos))
 
 		// Although unrealistic, it's probably sufficient to only use "second" granularity here.
 		mutation := bigtable.NewMutation()

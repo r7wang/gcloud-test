@@ -118,6 +118,8 @@ func (wf *OLTPSpanner) multiSequentialRead(r *rand.Rand) error {
 }
 
 // Read multiple rows using a random Read.
+//
+// TODO: Use UNNEST instead of doing multiple txn.ReadRow().
 func (wf *OLTPSpanner) multiRandomRead(r *rand.Rand) error {
 	const numReads = 5
 

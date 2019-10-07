@@ -42,6 +42,9 @@ func NewOLAPSpanner(
 //       may want to convert that into top 10 highest transaction volume months, which adds
 //       slightly more complex year/month extraction.
 // TODO: Is it worth considering an aggregation query that does not involve extraction?
+// TODO: We should consider adding a join heavy example where we deal with properties of various
+//       entities. For example, different types of users transacting to each other, where the
+//       transaction is a certain type of transaction.
 func (wf *OLAPSpanner) Run() error {
 	if err := wf.runner.runTest(wf.simpleTopN, "OLAP.simpleTopN"); err != nil {
 		return err

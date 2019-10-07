@@ -47,28 +47,7 @@ func (s *SchemaSpanner) CreateDatabase(db string) error {
 	op, err := s.client.CreateDatabase(s.ctx, &adminpb.CreateDatabaseRequest{
 		Parent:          matches[1],
 		CreateStatement: "CREATE DATABASE `" + matches[2] + "`",
-		ExtraStatements: []string{
-			`CREATE TABLE Users(
-			    Id INT64 NOT NULL,
-				Name STRING(2048) NOT NULL,
-				CreationTime TIMESTAMP NOT NULL
-				OPTIONS(allow_commit_timestamp=true)
-			) PRIMARY KEY(Id)`,
-			`CREATE TABLE Companies(
-			    Id INT64 NOT NULL,
-			    Name STRING(2048) NOT NULL,
-			    CreationTime TIMESTAMP NOT NULL
-			    OPTIONS(allow_commit_timestamp=true)
-			) PRIMARY KEY(Id)`,
-			`CREATE TABLE Transactions(
-				Id INT64 NOT NULL,
-				CompanyId INT64 NOT NULL,
-				FromUserId INT64 NOT NULL,
-				ToUserId INT64 NOT NULL,
-				Time TIMESTAMP NOT NULL
-				OPTIONS(allow_commit_timestamp=true)
-			) PRIMARY KEY(Id)`,
-		},
+		ExtraStatements: schemaKeyFromUserAndTime(),
 	})
 	if err != nil {
 		return err
@@ -77,4 +56,55 @@ func (s *SchemaSpanner) CreateDatabase(db string) error {
 		return err
 	}
 	return nil
+}
+
+func schemaDefault() []string {
+	return []string{
+		`CREATE TABLE Users(
+			Id INT64 NOT NULL,
+			Name STRING(2048) NOT NULL,
+			CreationTime TIMESTAMP NOT NULL
+			OPTIONS(allow_commit_timestamp=true)
+		) PRIMARY KEY(Id)`,
+		`CREATE TABLE Companies(
+			Id INT64 NOT NULL,
+			Name STRING(2048) NOT NULL,
+			CreationTime TIMESTAMP NOT NULL
+			OPTIONS(allow_commit_timestamp=true)
+		) PRIMARY KEY(Id)`,
+		`CREATE TABLE Transactions(
+			Id INT64 NOT NULL,
+			CompanyId INT64 NOT NULL,
+			FromUserId INT64 NOT NULL,
+			ToUserId INT64 NOT NULL,
+			Time TIMESTAMP NOT NULL
+			OPTIONS(allow_commit_timestamp=true)
+		) PRIMARY KEY(Id)`,
+	}
+}
+
+func schemaKeyFromUserAndTime() []string {
+	return []string{
+		`CREATE TABLE Users(
+			Id INT64 NOT NULL,
+			Name STRING(2048) NOT NULL,
+			CreationTime TIMESTAMP NOT NULL
+			OPTIONS(allow_commit_timestamp=true)
+		) PRIMARY KEY(Id)`,
+		`CREATE TABLE Companies(
+			Id INT64 NOT NULL,
+			Name STRING(2048) NOT NULL,
+			CreationTime TIMESTAMP NOT NULL
+			OPTIONS(allow_commit_timestamp=true)
+		) PRIMARY KEY(Id)`,
+		`CREATE TABLE Transactions(
+			Id INT64 NOT NULL,
+			CompanyId INT64 NOT NULL,
+			FromUserId INT64 NOT NULL,
+			ToUserId INT64 NOT NULL,
+			Time TIMESTAMP NOT NULL
+			OPTIONS(allow_commit_timestamp=true)
+		) PRIMARY KEY(FromUserId, Time)`,
+		`CREATE UNIQUE INDEX UniqueId ON Transactions(Id)`,
+	}
 }
