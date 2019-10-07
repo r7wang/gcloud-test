@@ -8,9 +8,11 @@ The table below lists latency across a variety of operation types in `millisecon
 
 | Operation           | Bigtable Average (99pct) | Spanner Average (99pct)
 | :-----------------: | :----------------------: | :---------------------:
-| simpleRandomRead    | 32.05 (88.54)            | TBD
-| multiRandomRead     | 63.36 (88.41)            | TBD
-| multiSequentialRead | 34.46 (45.91)            | TBD
-| blindWrite          | 29.96 (33.33)            | TBD
-| delete              | 29.98 (33.65)            | TBD
+| simpleRandomRead    | 32.05 (88.54)            | 33.50 (43.61)
+| simpleRandomQuery   | N/A                      | 32.59 (38.12)
+| multiRandomRead     | 63.36 (88.41)            | 175.68 (196.04)
+| multiSequentialRead | 34.46 (45.91)            | 33.15 (38.84)
+| blindWrite          | 29.96 (33.33)            | 48.00 (54.56)
+| delete              | 29.98 (33.65)            | 48.33 (59.38)
 | atomicAppend        | 45.09 (49.69)            | N/A
+| atomicSwap          | N/A                      | 94.59 (104.25)
