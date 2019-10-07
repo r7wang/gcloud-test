@@ -67,7 +67,7 @@ func (wf *OLTPSpanner) simpleRandomReadRow(r *rand.Rand) error {
 		wf.ctx,
 		datagen.TransactionTableName,
 		spanner.Key{readID},
-		[]string{"fromUserId", "toUserId"})
+		[]string{datagen.TransactionFromUserColumn, datagen.TransactionToUserColumn})
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func (wf *OLTPSpanner) multiSequentialRead(r *rand.Rand) error {
 			Start: spanner.Key{startReadID},
 			End:   spanner.Key{endReadID},
 		},
-		[]string{"fromUserId", "toUserId"})
+		[]string{datagen.TransactionFromUserColumn, datagen.TransactionToUserColumn})
 	defer iter.Stop()
 	if err := wf.scanIterator(iter); err != nil {
 		return err
@@ -129,7 +129,7 @@ func (wf *OLTPSpanner) multiRandomRead(r *rand.Rand) error {
 			wf.ctx,
 			datagen.TransactionTableName,
 			spanner.Key{readID},
-			[]string{"fromUserId", "toUserId"})
+			[]string{datagen.TransactionFromUserColumn, datagen.TransactionToUserColumn})
 		if err != nil {
 			return err
 		}
@@ -151,7 +151,7 @@ func (wf *OLTPSpanner) atomicSwap(r *rand.Rand) error {
 			wf.ctx,
 			datagen.TransactionTableName,
 			spanner.Key{updateID},
-			[]string{"fromUserId", "toUserId"})
+			[]string{datagen.TransactionFromUserColumn, datagen.TransactionToUserColumn})
 		if err != nil {
 			return err
 		}
