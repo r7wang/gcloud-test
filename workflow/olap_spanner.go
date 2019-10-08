@@ -12,8 +12,8 @@ import (
 	"google.golang.org/api/iterator"
 )
 
-// OLAPSpanner defines operations to exercise common types of analytical workflows across large chunks of
-// data.
+// OLAPSpanner defines operations to exercise common types of analytical workflows across large
+// chunks of data.
 type OLAPSpanner struct {
 	ctx     context.Context
 	runner  *runner
