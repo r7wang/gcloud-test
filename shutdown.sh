@@ -1,3 +1,7 @@
 #!/usr/bin/env bash
 
-gcloud spanner instances delete ledger-instance --quiet
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+source "${DIR}/run.conf"
+
+gcloud spanner instances delete "${INSTANCE_NAME}" --quiet

@@ -4,6 +4,8 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 OS=$(go env GOOS)
 ARCH=$(go env GOARCH)
 
+source "${DIR}/run.conf"
+
 # Name of the experiment being run.
 ENTITY_NAME="bigtable-datagen"
 
@@ -11,8 +13,6 @@ ENTITY_NAME="bigtable-datagen"
 CMD="${DIR}/build/${OS}-${ARCH}/${ENTITY_NAME}"
 
 # Configurable parameters local to a user.
-PROJECT_NAME="bigtable-test-254214"
-INSTANCE_NAME="ledger-instance"
 CLUSTER_NAME="ledger"
 
 gcloud bigtable instances create ${INSTANCE_NAME} \
