@@ -118,27 +118,27 @@ func (wf *OLTPSpanner) multiSequentialRead(r *rand.Rand) error {
 }
 
 // Read multiple rows using a random Read.
-//
-// TODO: Use UNNEST instead of doing multiple txn.ReadRow().
 func (wf *OLTPSpanner) multiRandomRead(r *rand.Rand) error {
 	const numReads = 5
 
-	txn := wf.client.ReadOnlyTransaction()
-	defer txn.Close()
+	readIDs := []int64{}
 	for i := 0; i < numReads; i++ {
 		readID := datagen.RandomGeneratedTransactionID(r)
-		row, err := txn.ReadRow(
-			wf.ctx,
-			datagen.TransactionTableName,
-			spanner.Key{readID},
-			[]string{datagen.TransactionFromUserColumn, datagen.TransactionToUserColumn})
-		if err != nil {
-			return err
-		}
-		var fromUserID, toUserID int64
-		if err := row.Columns(&fromUserID, &toUserID); err != nil {
-			return err
-		}
+		readIDs = append(readIDs, readID)
+	}
+
+	stmt := spanner.Statement{
+		SQL: `SELECT t.FromUserId, t.ToUserId
+				FROM Transactions@{FORCE_INDEX=UniqueId} t
+				WHERE t.Id IN UNNEST(@keys)`,
+		Params: map[string]interface{}{
+			"keys": readIDs,
+		},
+	}
+	iter := wf.client.Single().Query(wf.ctx, stmt)
+	defer iter.Stop()
+	if err := wf.scanIterator(iter); err != nil {
+		return err
 	}
 	return nil
 }
